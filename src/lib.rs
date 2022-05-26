@@ -40,6 +40,43 @@ impl Default for Controller {
 }
 
 impl Controller {
+    pub fn control(
+        &self,
+        from_position: Vector3<f32>,
+        from_time: f32,
+        to_position: Vector3<f32>,
+        to_time: f32,
+        current_time: f32,
+        local_position: Vector3<f32>,
+        local_velocity: Vector3<f32>,
+        acceleration_ff: Vector2<f32>,
+        attitude: Vector3<f32>,
+    ) -> Vector3<f32> {
+        let (local_position_cmd, local_velocity_cmd) =
+            self.trajectory_control(from_position, from_time, to_position, to_time, current_time);
+
+        let acceleration_cmd = self.lateral_position_control(
+            Vector2::new(local_position_cmd[0], local_position_cmd[1]),
+            Vector2::new(local_velocity_cmd[0], local_velocity_cmd[1]),
+            Vector2::new(local_position[0], local_position[1]),
+            Vector2::new(local_velocity[0], local_velocity[1]),
+            acceleration_ff,
+        );
+        let thrust_cmd = self.altitude_control(
+            -local_position_cmd[2],
+            -local_velocity_cmd[2],
+            -local_position[2],
+            -local_velocity[2],
+            attitude,
+            9.81,
+        );
+
+        let roll_pitch_rate_cmd = self.roll_pitch_control(acceleration_cmd, attitude, thrust_cmd);
+        let yaw_rate_cmd = self.yaw_control(to_position[2], attitude[2]);
+
+        Vector3::new(roll_pitch_rate_cmd[0], roll_pitch_rate_cmd[1], yaw_rate_cmd)
+    }
+
     pub fn trajectory_control(
         &self,
         from_position: Vector3<f32>,
@@ -82,7 +119,7 @@ impl Controller {
         acceleration_cmd: Vector2<f32>,
         yaw_cmd: f32,
     ) -> (Vector3<f32>, f32) {
-        let thrust_cmd = self.attitude_control(
+        let thrust_cmd = self.altitude_control(
             altitude_cmd,
             vertical_velocity_cmd,
             altitude,
@@ -101,7 +138,7 @@ impl Controller {
     }
 
     /// Calculate the vertical acceleration (thrust) command.
-    pub fn attitude_control(
+    pub fn altitude_control(
         &self,
         altitude_cmd: f32,
         vertical_velocity_cmd: f32,
