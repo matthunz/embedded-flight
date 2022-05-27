@@ -1,3 +1,5 @@
+#![no_std]
+
 use nalgebra::{Vector2, Vector3};
 
 mod attitude;
@@ -143,13 +145,4 @@ impl PositionController {
 fn pid_config(t_rise: f32, delta: f32) -> (f32, f32) {
     let w = 1. / (1.57 * t_rise);
     (w * w, 2. * delta * w)
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
 }

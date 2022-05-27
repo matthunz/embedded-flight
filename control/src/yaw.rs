@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 pub struct YawController {
     yaw_k_p: f32,

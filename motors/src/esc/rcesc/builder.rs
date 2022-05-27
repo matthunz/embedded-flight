@@ -1,6 +1,4 @@
-use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::PwmPin;
-use num_traits::{Float, One};
 
 use super::RCESC;
 

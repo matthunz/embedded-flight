@@ -5,7 +5,6 @@ edition = "2021"
 
 [workspace]
 members = [
-    "core",
     "control",
     "motors"
 ]

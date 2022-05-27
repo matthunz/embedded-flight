@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-embedded-flight-core = { path = "../core" }
 embedded-hal = "0.2.7"
 num-traits = "0.2.15"
 nalgebra = "0.31.0"

@@ -1,3 +1,5 @@
+#![no_std]
+
 use esc::ESC;
 use filter::LowPassFilter;
 use nalgebra::Vector3;
@@ -67,7 +69,7 @@ where
 
 pub struct MotorMatrix<E, T, const N: usize> {
     pub motors: [Motor<E, T>; N],
-    // In -T::one().1
+    // In -1..1
     throttle_avg_max: T,
     throttle_filter: LowPassFilter<T>,
     rpy_scale: T,
