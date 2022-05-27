@@ -57,10 +57,11 @@ impl Trajectory {
 }
 
 pub struct PositionController {
-    attitude_controller: AttitudeController,
-    body_rate_controller: BodyRateController,
-    yaw_controller: YawController,
-    lateral_position: LateralPositionController,
+    pub attitude_controller: AttitudeController,
+    pub body_rate_controller: BodyRateController,
+    pub yaw_controller: YawController,
+    pub lateral_position: LateralPositionController,
+    pub acceleration_ff: Vector2<f32>,
 }
 
 impl Default for PositionController {
@@ -70,6 +71,7 @@ impl Default for PositionController {
             yaw_controller: YawController::default(),
             body_rate_controller: BodyRateController::default(),
             lateral_position: LateralPositionController::default(),
+            acceleration_ff: Vector2::zeros(),
         }
     }
 }
@@ -81,7 +83,6 @@ impl PositionController {
         trajectory: Trajectory,
         local_position: Vector3<f32>,
         local_velocity: Vector3<f32>,
-        acceleration_ff: Vector2<f32>,
         attitude: Vector3<f32>,
         gyro: Vector3<f32>,
     ) -> Moment {
@@ -90,7 +91,6 @@ impl PositionController {
             trajectory.velocity_cmd,
             local_position,
             local_velocity,
-            acceleration_ff,
             attitude,
             gyro,
         )
@@ -103,7 +103,6 @@ impl PositionController {
         local_velocity_cmd: Vector3<f32>,
         local_position: Vector3<f32>,
         local_velocity: Vector3<f32>,
-        acceleration_ff: Vector2<f32>,
         attitude: Vector3<f32>,
         gyro: Vector3<f32>,
     ) -> Moment {
@@ -112,7 +111,7 @@ impl PositionController {
             Vector2::new(local_velocity_cmd[0], local_velocity_cmd[1]),
             Vector2::new(local_position[0], local_position[1]),
             Vector2::new(local_velocity[0], local_velocity[1]),
-            acceleration_ff,
+            self.acceleration_ff,
         );
         let thrust_cmd = self.attitude_controller.altitude_control(
             -local_position_cmd[2],
