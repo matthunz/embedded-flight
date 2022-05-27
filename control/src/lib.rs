@@ -29,6 +29,7 @@ impl Moment {
     }
 }
 
+/// The trajectory for a craft with a position and velocity commanded moment.
 pub struct Trajectory {
     pub position_cmd: Vector3<f32>,
     pub velocity_cmd: Vector3<f32>,
@@ -43,7 +44,7 @@ impl Trajectory {
     }
 
     /// Calculate a commanded position and velocity based on the trajectory.
-    pub fn calculate(
+    pub fn from_position(
         from_position: Vector3<f32>,
         from_time: f32,
         to_position: Vector3<f32>,
@@ -59,6 +60,7 @@ impl Trajectory {
     }
 }
 
+/// Cascaded PID flight position controller
 pub struct PositionController {
     pub attitude_controller: AttitudeController,
     pub body_rate_controller: BodyRateController,
