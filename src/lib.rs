@@ -19,7 +19,40 @@ pub struct Moment {
 
 impl Moment {
     pub fn new(moment: Vector3<f32>, thrust: f32) -> Self {
-        Self { attitude: moment, thrust }
+        Self {
+            attitude: moment,
+            thrust,
+        }
+    }
+}
+
+pub struct Trajectory {
+    pub position_cmd: Vector3<f32>,
+    pub velocity_cmd: Vector3<f32>,
+}
+
+impl Trajectory {
+    pub fn new(position_cmd: Vector3<f32>, velocity_cmd: Vector3<f32>) -> Self {
+        Self {
+            position_cmd,
+            velocity_cmd,
+        }
+    }
+
+    /// Calculate a commanded position and velocity based on the trajectory.
+    pub fn calculate(
+        from_position: Vector3<f32>,
+        from_time: f32,
+        to_position: Vector3<f32>,
+        to_time: f32,
+        current_time: f32,
+    ) -> Self {
+        let position_cmd = (to_position - from_position) * (current_time - from_time)
+            / (to_time - from_time)
+            + from_position;
+        let velocity_cmd = (to_position - from_position) / (to_time - from_time);
+
+        Self::new(position_cmd, velocity_cmd)
     }
 }
 
@@ -45,23 +78,16 @@ impl PositionController {
     /// Calculate the desired roll, pitch, yaw, and thrust moment commands from a trajectory in Newtons*meters.
     pub fn trajectory_control(
         &self,
-        from_position: Vector3<f32>,
-        from_time: f32,
-        to_position: Vector3<f32>,
-        to_time: f32,
-        current_time: f32,
+        trajectory: Trajectory,
         local_position: Vector3<f32>,
         local_velocity: Vector3<f32>,
         acceleration_ff: Vector2<f32>,
         attitude: Vector3<f32>,
         gyro: Vector3<f32>,
     ) -> Moment {
-        let (local_position_cmd, local_velocity_cmd) =
-            trajectory(from_position, from_time, to_position, to_time, current_time);
-
         self.position_control(
-            local_position_cmd,
-            local_velocity_cmd,
+            trajectory.position_cmd,
+            trajectory.velocity_cmd,
             local_position,
             local_velocity,
             acceleration_ff,
@@ -112,22 +138,6 @@ impl PositionController {
 
         Moment::new(moment, thrust_cmd)
     }
-}
-
-/// Calculate a commanded position and velocity based on the trajectory.
-pub fn trajectory(
-    from_position: Vector3<f32>,
-    from_time: f32,
-    to_position: Vector3<f32>,
-    to_time: f32,
-    current_time: f32,
-) -> (Vector3<f32>, Vector3<f32>) {
-    let position_cmd = (to_position - from_position) * (current_time - from_time)
-        / (to_time - from_time)
-        + from_position;
-    let velocity_cmd = (to_position - from_position) / (to_time - from_time);
-
-    (position_cmd, velocity_cmd)
 }
 
 // From `t_rise` and `delta` returns kp and kd
