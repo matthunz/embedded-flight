@@ -4,6 +4,9 @@ use crate::AHRS;
 use embedded_time::{clock, duration::Seconds, Clock, Instant};
 use nalgebra::Vector3;
 
+mod builder;
+pub use builder::Builder;
+
 pub struct Copter<C: Clock, A, E, const N: usize> {
     pub controller: PositionController,
     pub motors: MotorMatrix<E, f32, N>,
@@ -22,10 +25,14 @@ where
     A: AHRS,
     E: ESC<Output = f32>,
 {
+    pub fn builder() -> Builder<C, A, E, N> {
+        Builder::default()
+    }
+
     pub fn take_off(&mut self, height: f32, time: f32) -> Result<(), clock::Error> {
         self.motors.arm();
         self.takeoff_time = self.clock.try_now()?;
-        
+
         self.fly(Vector3::new(0., 0., height), time)
     }
 

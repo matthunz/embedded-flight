@@ -27,11 +27,13 @@
 
 #![no_std]
 
-use nalgebra::Vector3;
-
 pub use embedded_flight_control as control;
-
 pub use embedded_flight_motors as motors;
+
+pub mod copter;
+pub use copter::Copter;
+
+use nalgebra::Vector3;
 
 pub trait AHRS {
     fn angle_rates(&mut self) -> Vector3<f32>;
@@ -42,6 +44,3 @@ pub trait AHRS {
 
     fn local_velocity(&mut self) -> Vector3<f32>;
 }
-
-mod copter;
-pub use copter::Copter;
