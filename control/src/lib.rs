@@ -14,6 +14,7 @@ pub use lateral_pos::LateralPositionController;
 mod yaw;
 pub use yaw::YawController;
 
+#[derive(Clone, Debug)]
 pub struct Moment {
     pub attitude: Vector3<f32>,
     pub thrust: f32,
