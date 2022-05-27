@@ -1,5 +1,5 @@
-use nalgebra::{Matrix2, Rotation3, Vector2, Vector3};
 use crate::pid_config;
+use nalgebra::{Matrix2, Rotation3, Vector2, Vector3};
 
 pub struct AttitudeController {
     gravity: f32,

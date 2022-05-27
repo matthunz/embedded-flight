@@ -3,7 +3,14 @@ name = "embedded-flight"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [
+    "core",
+    "control",
+    "motors"
+]
 
 [dependencies]
+embedded-flight-control = { path = "./control" }
+embedded-flight-motors = { path = "./motors" }
 nalgebra = "0.31.0"
