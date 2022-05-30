@@ -44,24 +44,78 @@ pub struct AttitudeController {
     pub p_angle_pitch: P,
     pub p_angle_yaw: P,
     pub thrust_error_angle: f32,
+    pub attitude_target: Quaternion<f32>,
+    // In radians!
+    pub ang_vel_max: Vector3<f32>,
+    pub ang_vel_target: Vector3<f32>,
+    pub rate_bf_ff_enabled: bool,
+    pub input_tc: f32,
 }
 
 impl AttitudeController {
     /// Command a Quaternion attitude with feed-forward and smoothing.
     /// Returns `attitude_desired` updated by the integral of the angular velocity
-    pub fn input_quaternion(
+    pub fn input(
         &mut self,
         attitude_desired: Quaternion<f32>,
         ang_vel_target: Vector3<f32>,
-    ) {
+        attitude_body: Quaternion<f32>,
+    ) -> Quaternion<f32> {
+        let attitude_error_quat = self.attitude_target.try_inverse().unwrap() * attitude_desired;
+        let attitude_error_angle = to_axis_angle(attitude_error_quat);
+
+        // Limit the angular velocity
+        let ang_vel_target = ang_vel_limit(ang_vel_target, self.ang_vel_max);
+
+        if self.rate_bf_ff_enabled {
+            // When acceleration limiting and feedforward are enabled, the sqrt controller is used to compute an euler
+            // angular velocity that will cause the euler angle to smoothly stop at the input angle with limited deceleration
+            // and an exponential decay specified by _input_tc at the end.
+            self.ang_vel_target.x = input_shaping_angle(
+                wrap_PI(attitude_error_angle.x),
+                self.input_tc,
+                self.accel_max.x,
+                self.ang_vel_target.x,
+                ang_vel_target.x,
+                self.ang_vel_max.x,
+                self.dt,
+            );
+            self.ang_vel_target.y = input_shaping_angle(
+                wrap_PI(attitude_error_angle.y),
+                self.input_tc,
+                self.accel_max.y,
+                self.ang_vel_target.y,
+                ang_vel_target.y,
+                self.ang_vel_max.x,
+                self.dt,
+            );
+            self.ang_vel_target.z = input_shaping_angle(
+                wrap_PI(attitude_error_angle.z),
+                self.input_tc,
+                self.accel_max.z,
+                self.ang_vel_target.z,
+                ang_vel_target.z,
+                self.ang_vel_max.x,
+                self.dt,
+            );
+        } else {
+            self.attitude_target = attitude_desired;
+            self.ang_vel_target = ang_vel_target;
+        }
+
+        // TODO
+
+        self.run(attitude_body);
+
+        attitude_desired
     }
 
     /// Calculate the body frame angular velocities to follow the target attitude.
     /// `attitude_body` represents a quaternion rotation in NED frame to the body
-    pub fn target(&mut self, attitude_body: Quaternion<f32>, attitude_target: Quaternion<f32>) {
+    pub fn run(&mut self, attitude_body: Quaternion<f32>) {
         // Vector representing the angular error to rotate the thrust vector using x and y and heading using z
         let (_attitude_target, attitude_error) = self.thrust_heading_rotation_angles(
-            attitude_target,
+            self.attitude_target,
             attitude_body,
             self.thrust_error_angle,
         );
