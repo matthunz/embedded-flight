@@ -8,7 +8,7 @@ pub struct SlewLimiter<const N: usize> {
     slew_rate_max: f32,
     slew_rate_tau: f32,
     slew_filter: LowPassFilter<f32>,
-    output_slew_rate: f32,
+    pub output_slew_rate: f32,
     _modifier_slew_rate: f32,
     last_sample: f32,
     _max_pos_slew_rate: f32,
@@ -27,7 +27,8 @@ pub struct SlewLimiter<const N: usize> {
 }
 
 impl<const N: usize> SlewLimiter<N> {
-    ///  Apply the filter to a sample, returning multiplier between 0 and 1 to keep output within slew rate
+  
+    /// Apply the filter to a sample, returning multiplier between 0 and 1 to keep output within slew rate
     pub fn modifier(&mut self, sample: f32, dt: f32, now_ms: u32) -> f32 {
         if self.slew_rate_max <= 0. {
             self.output_slew_rate = 0.;

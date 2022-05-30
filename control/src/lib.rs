@@ -14,6 +14,8 @@ pub use lateral_pos::LateralPositionController;
 mod yaw;
 pub use yaw::YawController;
 
+mod pid;
+pub use pid::PID;
 
 mod slew_limiter;
 pub use slew_limiter::SlewLimiter;
