@@ -35,19 +35,19 @@ impl MultiCopterAttitudeController {
 
         self.attitude_controller.ang_vel_body += self.attitude_controller.sysid_ang_vel_body;
 
-        let roll = self.roll_rate.update_all(
+        let roll = self.roll_rate.update(
             self.attitude_controller.ang_vel_body[0],
             gyro[0],
             limit[0],
             now_ms,
         ) + self.attitude_controller.actuator_sysid[0];
-        let pitch = self.roll_rate.update_all(
+        let pitch = self.roll_rate.update(
             self.attitude_controller.ang_vel_body[1],
             gyro[1],
             limit[1],
             now_ms,
         ) + self.attitude_controller.actuator_sysid[1];
-        let yaw = self.roll_rate.update_all(
+        let yaw = self.roll_rate.update(
             self.attitude_controller.ang_vel_body[2],
             gyro[2],
             limit[2],
