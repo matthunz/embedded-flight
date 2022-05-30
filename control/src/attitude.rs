@@ -1,92 +1,98 @@
-use crate::pid_config;
-use nalgebra::{Matrix2, Rotation3, Vector2, Vector3};
+use crate::PID;
+use nalgebra::Vector3;
 
 pub struct AttitudeController {
-    gravity: f32,
-    drone_mass_kg: f32,
-    altitude_k_p: f32,
-    altitude_k_d: f32,
-    roll_pitch_k_p_roll: f32,
-    roll_pitch_k_p_pitch: f32,
+    // The angular velocity (in radians per second) in the body frame.
+    pub ang_vel_body: Vector3<f32>,
+    pub actuator_sysid: Vector3<f32>,
+    pub sysid_ang_vel_body: Vector3<f32>,
+    pub feed_forward_scalar: f32,
+    pub throttle_rpy_mix: f32,
+    pub throttle_rpy_mix_desired: f32,
+    pub attitude_control_max: f32,
+    pub dt: f32,
 }
 
-impl Default for AttitudeController {
-    fn default() -> Self {
-        let (altitude_k_p, altitude_k_d) = pid_config(1., 0.85);
-
-        Self {
-            gravity: 9.81,
-            drone_mass_kg: 0.5,
-            altitude_k_p,
-            altitude_k_d,
-            roll_pitch_k_p_roll: 7.,
-            roll_pitch_k_p_pitch: 7.,
-        }
-    }
+pub struct MultiCopterAttitudeController {
+    // The angular velocity (in radians per second) in the body frame.
+    pub roll_rate: PID,
+    pub pitch_rate: PID,
+    pub yaw_rate: PID,
+    pub attitude_controller: AttitudeController,
 }
 
-impl AttitudeController {
-    /// Calculate the vertical acceleration (thrust) command.
-    pub fn altitude_control(
-        &self,
-        altitude_cmd: f32,
-        vertical_velocity_cmd: f32,
-        altitude: f32,
-        vertical_velocity: f32,
-        attitude: Vector3<f32>,
-        acceleration_ff: f32,
-    ) -> f32 {
-        let z_err = altitude_cmd - altitude;
-        let z_err_dot = vertical_velocity_cmd - vertical_velocity;
-        let b_z = Rotation3::from_euler_angles(attitude[0], attitude[1], attitude[2])[(2, 2)];
+impl MultiCopterAttitudeController {
+    /// Returns a tuple containing the desired pitch, roll, and yaw control and feed forward in -1 ~ +1.
+    pub fn rate_control(
+        &mut self,
+        gyro: Vector3<f32>,
+        limit: [bool; 3],
+        now_ms: u32,
+    ) -> (Vector3<f32>, Vector3<f32>) {
+        // Move throttle vs attitude mixing towards desired.
+        // Called from here because this is conveniently called on every iteration
+        self.update_throttle_rpy_mix();
 
-        let u_1 = self.altitude_k_p * z_err + self.altitude_k_d * z_err_dot + acceleration_ff;
-        let acc = (u_1 - self.gravity) / b_z;
+        self.attitude_controller.ang_vel_body += self.attitude_controller.sysid_ang_vel_body;
 
-        self.drone_mass_kg * acc
+        let roll = self.roll_rate.update_all(
+            self.attitude_controller.ang_vel_body[0],
+            gyro[0],
+            limit[0],
+            now_ms,
+        ) + self.attitude_controller.actuator_sysid[0];
+        let pitch = self.roll_rate.update_all(
+            self.attitude_controller.ang_vel_body[1],
+            gyro[1],
+            limit[1],
+            now_ms,
+        ) + self.attitude_controller.actuator_sysid[1];
+        let yaw = self.roll_rate.update_all(
+            self.attitude_controller.ang_vel_body[2],
+            gyro[2],
+            limit[2],
+            now_ms,
+        ) + self.attitude_controller.actuator_sysid[2];
+
+        let roll_ff = self.roll_rate.feed_forward();
+        let pitch_ff = self.pitch_rate.feed_forward();
+        let yaw_ff = self.yaw_rate.feed_forward() * self.attitude_controller.feed_forward_scalar;
+
+        self.attitude_controller.sysid_ang_vel_body = Vector3::zeros();
+        self.attitude_controller.actuator_sysid = Vector3::zeros();
+
+        // TODO control_monitor_update();
+
+        (
+            Vector3::new(roll, pitch, yaw),
+            Vector3::new(roll_ff, pitch_ff, yaw_ff),
+        )
     }
 
-    /// Calculate the roll-rate and pitch-rate commands in the body frame in radians/second.
-    pub fn roll_pitch_control(
-        &self,
-        acceleration_cmd: Vector2<f32>,
-        attitude: Vector3<f32>,
-        thrust_cmd: f32,
-    ) -> Vector2<f32> {
-        if thrust_cmd > 0. {
-            let c = -thrust_cmd / self.drone_mass_kg;
-
-            let (b_x_c, b_y_c) = {
-                let b_c = (acceleration_cmd / c).map(|n| n.min(1f32.max(-1.)));
-                (b_c[0], b_c[1])
-            };
-
-            let rot_mat = Rotation3::from_euler_angles(attitude[0], attitude[1], attitude[2]);
-
-            let b_x = rot_mat[(0, 2)];
-            let b_x_err = b_x_c - b_x;
-            let b_x_p_term = self.roll_pitch_k_p_roll * b_x_err;
-
-            let b_y = rot_mat[(1, 2)];
-            let b_y_err = b_y_c - b_y;
-            let b_y_p_term = self.roll_pitch_k_p_pitch * b_y_err;
-
-            let b_x_commanded_dot = b_x_p_term;
-            let b_y_commanded_dot = b_y_p_term;
-
-            let rot_mat1 = Matrix2::new(
-                rot_mat[(1, 0)],
-                -rot_mat[(0, 0)],
-                rot_mat[(1, 1)],
-                -rot_mat[(0, 1)],
-            ) / rot_mat[(2, 2)];
-
-            let rot_rate = rot_mat1 * Vector2::new(b_x_commanded_dot, b_y_commanded_dot);
-            let p_c = rot_rate[0];
-            let q_c = rot_rate[1];
-            Vector2::new(p_c, q_c)
-        } else {
-            Vector2::zeros()
+    // update_throttle_rpy_mix - slew set_throttle_rpy_mix to requested value
+    pub fn update_throttle_rpy_mix(&mut self) {
+        // slew _throttle_rpy_mix to _throttle_rpy_mix_desired
+        if self.attitude_controller.throttle_rpy_mix
+            < self.attitude_controller.throttle_rpy_mix_desired
+        {
+            // increase quickly (i.e. from 0.1 to 0.9 in 0.4 seconds)
+            self.attitude_controller.throttle_rpy_mix += (2. * self.attitude_controller.dt).min(
+                self.attitude_controller.throttle_rpy_mix_desired
+                    - self.attitude_controller.throttle_rpy_mix,
+            );
+        } else if self.attitude_controller.throttle_rpy_mix
+            > self.attitude_controller.throttle_rpy_mix_desired
+        {
+            // reduce more slowly (from 0.9 to 0.1 in 1.6 seconds)
+            self.attitude_controller.throttle_rpy_mix -= (0.5 * self.attitude_controller.dt).min(
+                self.attitude_controller.throttle_rpy_mix
+                    - self.attitude_controller.throttle_rpy_mix_desired,
+            );
         }
+        self.attitude_controller.throttle_rpy_mix = self
+            .attitude_controller
+            .throttle_rpy_mix
+            .max(0.1)
+            .min(self.attitude_controller.attitude_control_max);
     }
 }
