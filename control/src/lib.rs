@@ -14,6 +14,10 @@ pub use lateral_pos::LateralPositionController;
 mod yaw;
 pub use yaw::YawController;
 
+
+mod slew_limiter;
+pub use slew_limiter::SlewLimiter;
+
 #[derive(Clone, Debug)]
 pub struct Moment {
     pub attitude: Vector3<f32>,
