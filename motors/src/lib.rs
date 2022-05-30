@@ -1,13 +1,11 @@
 #![no_std]
 
+use embedded_flight_core::filter::LowPassFilter;
 use esc::ESC;
-use filter::LowPassFilter;
 use nalgebra::Vector3;
 use num_traits::{Float, FloatConst, FromPrimitive};
 
 pub mod esc;
-
-pub mod filter;
 
 pub struct Limit {
     pub roll: bool,

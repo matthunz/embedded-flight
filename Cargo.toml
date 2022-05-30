@@ -8,6 +8,7 @@ repository = "https://github.com/matthunz/embedded-flight"
 
 [workspace]
 members = [
+    "core",
     "control",
     "motors"
 ]
