@@ -12,8 +12,6 @@ pub use yaw::YawController;
 pub mod pid;
 pub use pid::PID;
 
-mod slew_limiter;
-pub use slew_limiter::SlewLimiter;
 
 pub mod attitude;
 

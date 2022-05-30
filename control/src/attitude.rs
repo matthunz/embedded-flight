@@ -69,7 +69,7 @@ impl MultiCopterAttitudeController {
         )
     }
 
-    // update_throttle_rpy_mix - slew set_throttle_rpy_mix to requested value
+    // Slew set_throttle_rpy_mix to requested value
     pub fn update_throttle_rpy_mix(&mut self) {
         // slew _throttle_rpy_mix to _throttle_rpy_mix_desired
         if self.attitude_controller.throttle_rpy_mix

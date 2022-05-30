@@ -1,6 +1,7 @@
 use embedded_flight_core::filter::alpha;
 
-use crate::SlewLimiter;
+mod slew_limiter;
+pub use slew_limiter::SlewLimiter;
 
 pub struct Info {
     pub target: f32,
@@ -57,6 +58,8 @@ impl PID {
         self.target * self.kff
     }
 
+    /// Update the integral part of this PID.
+    /// If the limit flag is set the integral is only allowed to shrink.
     pub fn update_integral(&mut self, limit: bool) {
         if self.ki != 0. && self.dt > -0. {
             // Ensure that integrator can only be reduced if the output is saturated
