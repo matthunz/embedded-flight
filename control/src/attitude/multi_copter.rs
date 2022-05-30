@@ -3,6 +3,22 @@ use crate::PID;
 use embedded_flight_core::MotorOutput;
 use nalgebra::Vector3;
 
+pub fn euler_rate_to_ang_vel(
+    euler_rad: Vector3<f32>,
+    euler_rate_rads: Vector3<f32>,
+) -> Vector3<f32> {
+    let sin_theta = euler_rad.y.sin();
+    let cos_theta = euler_rad.y.cos();
+    let sin_phi = euler_rad.x.sin();
+    let cos_phi = euler_rad.x.cos();
+
+    Vector3::new(
+        euler_rate_rads.x - sin_theta * euler_rate_rads.z,
+        cos_phi * euler_rate_rads.y + sin_phi * cos_theta * euler_rate_rads.z,
+        -sin_phi * euler_rate_rads.y + cos_theta * cos_phi * euler_rate_rads.z,
+    )
+}
+
 pub struct MultiCopterAttitudeController {
     // The angular velocity (in radians per second) in the body frame.
     pub roll_rate: PID,
