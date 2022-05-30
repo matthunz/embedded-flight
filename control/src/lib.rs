@@ -12,7 +12,6 @@ pub use yaw::YawController;
 pub mod pid;
 pub use pid::PID;
 
-
 pub mod attitude;
 
 // From `t_rise` and `delta` returns kp and kd

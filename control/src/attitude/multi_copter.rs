@@ -1,17 +1,7 @@
+use super::AttitudeController;
 use crate::PID;
+use embedded_flight_core::MotorOutput;
 use nalgebra::Vector3;
-
-pub struct AttitudeController {
-    // The angular velocity (in radians per second) in the body frame.
-    pub ang_vel_body: Vector3<f32>,
-    pub actuator_sysid: Vector3<f32>,
-    pub sysid_ang_vel_body: Vector3<f32>,
-    pub feed_forward_scalar: f32,
-    pub throttle_rpy_mix: f32,
-    pub throttle_rpy_mix_desired: f32,
-    pub attitude_control_max: f32,
-    pub dt: f32,
-}
 
 pub struct MultiCopterAttitudeController {
     // The angular velocity (in radians per second) in the body frame.
@@ -28,7 +18,7 @@ impl MultiCopterAttitudeController {
         gyro: Vector3<f32>,
         limit: [bool; 3],
         now_ms: u32,
-    ) -> (Vector3<f32>, Vector3<f32>) {
+    ) -> MotorOutput<f32> {
         // Move throttle vs attitude mixing towards desired.
         // Called from here because this is conveniently called on every iteration
         self.update_throttle_rpy_mix();
@@ -63,7 +53,7 @@ impl MultiCopterAttitudeController {
 
         // TODO control_monitor_update();
 
-        (
+        MotorOutput::new(
             Vector3::new(roll, pitch, yaw),
             Vector3::new(roll_ff, pitch_ff, yaw_ff),
         )

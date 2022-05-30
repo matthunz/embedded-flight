@@ -1,6 +1,6 @@
 #![no_std]
 
-use embedded_flight_core::filter::LowPassFilter;
+use embedded_flight_core::{filter::LowPassFilter, MotorOutput};
 use esc::ESC;
 use nalgebra::Vector3;
 use num_traits::{Float, FloatConst, FromPrimitive};
@@ -119,10 +119,10 @@ where
         }
     }
 
-    pub fn output(&mut self, desired: Vector3<T>, feed_forward: Vector3<T>) -> Limit {
-        let roll_thrust = (desired[0] + feed_forward[0]) * self.compensation_gain;
-        let pitch_thrust = (desired[1] + feed_forward[1]) * self.compensation_gain;
-        let yaw_thrust = (desired[2] + feed_forward[2]) * self.compensation_gain;
+    pub fn output(&mut self, output: MotorOutput<T>) -> Limit {
+        let roll_thrust = (output.control[0] + output.feed_forward[0]) * self.compensation_gain;
+        let pitch_thrust = (output.control[1] + output.feed_forward[1]) * self.compensation_gain;
+        let yaw_thrust = (output.control[2] + output.feed_forward[2]) * self.compensation_gain;
         let mut throttle_thrust =
             self.throttle_filter
                 .filter(self.throttle, T::zero(), T::one() / self.loop_rate);
