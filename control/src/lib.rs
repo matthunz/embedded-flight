@@ -20,6 +20,86 @@ pub use pid::PID;
 mod slew_limiter;
 pub use slew_limiter::SlewLimiter;
 
+pub struct MultiCopterAttitudeController {
+    ang_vel_body: Vector3<f32>,
+    actuator_sysid: Vector3<f32>,
+    sysid_ang_vel_body: Vector3<f32>,
+    roll_rate: PID,
+    pitch_rate: PID,
+    yaw_rate: PID,
+    feed_forward_scalar: f32,
+    throttle_rpy_mix: f32,
+    throttle_rpy_mix_desired: f32,
+    attitude_control_max: f32,
+    dt: f32,
+}
+
+impl MultiCopterAttitudeController {
+    /// Returns a tuple containing the desired pitch, roll, and yaw control and feed forward in -1 ~ +1.
+    pub fn rate_control(
+        &mut self,
+        gyro: Vector3<f32>,
+        limit: [bool; 3],
+        now_ms: u32,
+    ) -> (Vector3<f32>, Vector3<f32>) {
+        // Move throttle vs attitude mixing towards desired.
+        // Called from here because this is conveniently called on every iteration
+        self.update_throttle_rpy_mix();
+
+        self.ang_vel_body += self.sysid_ang_vel_body;
+
+        let roll = self
+            .roll_rate
+            .update_all(self.ang_vel_body[0], gyro[0], limit[0], now_ms)
+            + self.actuator_sysid[0];
+        let pitch = self
+            .roll_rate
+            .update_all(self.ang_vel_body[1], gyro[1], limit[1], now_ms)
+            + self.actuator_sysid[1];
+        let yaw = self
+            .roll_rate
+            .update_all(self.ang_vel_body[2], gyro[2], limit[2], now_ms)
+            + self.actuator_sysid[2];
+
+        let roll_ff = self.roll_rate.feed_forward();
+        let pitch_ff = self.pitch_rate.feed_forward();
+        let yaw_ff = self.yaw_rate.feed_forward() * self.feed_forward_scalar;
+
+        self.sysid_ang_vel_body = Vector3::zeros();
+        self.actuator_sysid = Vector3::zeros();
+
+        // TODO control_monitor_update();
+
+        (
+            Vector3::new(roll, pitch, yaw),
+            Vector3::new(roll_ff, pitch_ff, yaw_ff),
+        )
+    }
+
+    // update_throttle_rpy_mix - slew set_throttle_rpy_mix to requested value
+    pub fn update_throttle_rpy_mix(&mut self) {
+        // slew _throttle_rpy_mix to _throttle_rpy_mix_desired
+        if (self.throttle_rpy_mix < self.throttle_rpy_mix_desired) {
+            // increase quickly (i.e. from 0.1 to 0.9 in 0.4 seconds)
+            self.throttle_rpy_mix +=
+                (2. * self.dt).min(self.throttle_rpy_mix_desired - self.throttle_rpy_mix);
+        } else if (self.throttle_rpy_mix > self.throttle_rpy_mix_desired) {
+            // reduce more slowly (from 0.9 to 0.1 in 1.6 seconds)
+            self.throttle_rpy_mix -=
+                (0.5 * self.dt).min(self.throttle_rpy_mix - self.throttle_rpy_mix_desired);
+        }
+        self.throttle_rpy_mix = self
+            .throttle_rpy_mix
+            .max(0.1)
+            .min(self.attitude_control_max);
+    }
+}
+
+fn control_monitor_filter_pid(value: f32, rms: f32) -> f32 {
+    let filter_constant = 0.99;
+    filter_constant * rms + (1. - filter_constant) * (value * value)
+}
+
 #[derive(Clone, Debug)]
 pub struct Moment {
     pub attitude: Vector3<f32>,

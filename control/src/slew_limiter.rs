@@ -27,7 +27,6 @@ pub struct SlewLimiter<const N: usize> {
 }
 
 impl<const N: usize> SlewLimiter<N> {
-  
     /// Apply the filter to a sample, returning multiplier between 0 and 1 to keep output within slew rate
     pub fn modifier(&mut self, sample: f32, dt: f32, now_ms: u32) -> f32 {
         if self.slew_rate_max <= 0. {

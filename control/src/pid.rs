@@ -1,4 +1,3 @@
-
 use embedded_flight_core::filter::alpha;
 
 use crate::SlewLimiter;
@@ -34,6 +33,7 @@ pub struct PID {
     ki: f32,
     kd: f32,
     ki_max: f32,
+    kff: f32,
     filter_t_hz: f32,
     filter_e_hz: f32,
     filter_d_hz: f32,
@@ -54,6 +54,10 @@ impl PID {
 
     fn alpha(&self, cutoff_freq: f32) -> f32 {
         alpha(self.dt, cutoff_freq)
+    }
+
+    pub fn feed_forward(&self) -> f32 {
+        self.target * self.kff
     }
 
     pub fn update_i(&mut self, limit: bool) {
