@@ -1,10 +1,31 @@
 use core::f32::consts::PI;
 
-use nalgebra::{Quaternion, Vector3};
+use nalgebra::{Quaternion, Vector2, Vector3};
 
 mod multi_copter;
 pub use multi_copter::MultiCopterAttitudeController;
 
+/// The attitude controller works around the concept of the desired attitude, target attitude
+/// and measured attitude. The desired attitude is the attitude input into the attitude controller
+/// that expresses where the higher level code would like the aircraft to move to. The target attitude is moved
+/// to the desired attitude with jerk, acceleration, and velocity limits. The target angular velocities are fed
+/// directly into the rate controllers. The angular error between the measured attitude and the target attitude is
+/// fed into the angle controller and the output of the angle controller summed at the input of the rate controllers.
+/// By feeding the target angular velocity directly into the rate controllers the measured and target attitudes
+/// remain very close together.
+///
+/// All input functions below follow the same procedure
+/// 1. define the desired attitude the aircraft should attempt to achieve using the input variables
+/// 2. using the desired attitude and input variables, define the target angular velocity so that it should
+///    move the target attitude towards the desired attitude
+/// 3. if _rate_bf_ff_enabled is not being used then make the target attitude
+///    and target angular velocities equal to the desired attitude and desired angular velocities.
+/// 4. ensure _attitude_target, _euler_angle_target, _euler_rate_target and
+///    _ang_vel_target have been defined. This ensures input modes can be changed without discontinuity.
+/// 5. attitude_controller_run_quat is then run to pass the target angular velocities to the rate controllers and
+///    integrate them into the target attitude. Any errors between the target attitude and the measured attitude are
+///    corrected by first correcting the thrust vector until the angle between the target thrust vector measured
+///    trust vector drops below 2*AC_ATTITUDE_THRUST_ERROR_ANGLE. At this point the heading is also corrected.
 pub struct AttitudeController {
     /// The angular velocity (in radians per second) in the body frame.
     pub ang_vel_body: Vector3<f32>,
@@ -26,6 +47,15 @@ pub struct AttitudeController {
 }
 
 impl AttitudeController {
+    /// Command a Quaternion attitude with feed-forward and smoothing.
+    /// Returns `attitude_desired` updated by the integral of the angular velocity
+    pub fn input_quaternion(
+        &mut self,
+        attitude_desired: Quaternion<f32>,
+        ang_vel_target: Vector3<f32>,
+    ) {
+    }
+
     /// Calculate the body frame angular velocities to follow the target attitude.
     /// `attitude_body` represents a quaternion rotation in NED frame to the body
     pub fn target(&mut self, attitude_body: Quaternion<f32>, attitude_target: Quaternion<f32>) {
@@ -136,6 +166,30 @@ impl AttitudeController {
 
 pub struct P {
     kp: f32,
+}
+
+pub fn ang_vel_limit(mut euler_rad: Vector3<f32>, ang_vel_max: Vector3<f32>) -> Vector3<f32> {
+    if ang_vel_max[0] == 0. || ang_vel_max[1] == 0. {
+        if ang_vel_max[0] != 0. {
+            euler_rad.x = euler_rad.x.max(-ang_vel_max[0]).min(ang_vel_max[0]);
+        }
+        if ang_vel_max[1] != 0. {
+            euler_rad.y = euler_rad.y.max(-ang_vel_max[1]).min(ang_vel_max[1]);
+        }
+    } else {
+        let thrust_vector_ang_vel =
+            Vector2::new(euler_rad.x / ang_vel_max[0], euler_rad.y / ang_vel_max[1]);
+        let thrust_vector_length = thrust_vector_ang_vel.norm();
+        if thrust_vector_length > 1. {
+            euler_rad.x = thrust_vector_ang_vel.x * ang_vel_max[0] / thrust_vector_length;
+            euler_rad.y = thrust_vector_ang_vel.y * ang_vel_max[1] / thrust_vector_length;
+        }
+    }
+    if ang_vel_max[2] != 0. {
+        euler_rad.z = euler_rad.z.max(-ang_vel_max[2]).min(ang_vel_max[2]);
+    }
+
+    euler_rad
 }
 
 /// thrust_vector_rotation_angles - calculates two ordered rotations to move the attitude_body quaternion to the attitude_target quaternion.
