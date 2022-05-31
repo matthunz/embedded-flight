@@ -31,7 +31,7 @@ pub use embedded_flight_control as control;
 pub use embedded_flight_motors as motors;
 
 pub mod copter;
-pub use copter::Copter;
+pub use copter::MultiCopter;
 
 use nalgebra::Vector3;
 

@@ -6,9 +6,6 @@ pub mod filter;
 
 pub mod scheduler;
 
-pub trait IntertialSensor {
-    fn sample(&mut self);
-}
 
 /// Motor output containing the desired pitch, roll, and yaw control and feed forward in -1 ~ +1.
 #[derive(Debug)]

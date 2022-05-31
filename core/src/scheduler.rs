@@ -1,16 +1,19 @@
-use embedded_time::{clock::Error, duration::Microseconds, Clock};
-use crate::IntertialSensor;
+use embedded_time::{
+    clock::Error,
+    duration::{Microseconds, Milliseconds},
+    Clock,
+};
 
-pub struct Task {
-    f: fn(),
+pub struct Task<T> {
+    f: fn(State<'_, T>),
     hz: f32,
     max_time_micros: u16,
     priority: u8,
     last_run: u16,
 }
 
-impl Task {
-    pub fn new(f: fn(), hz: f32, max_time_micros: u16, priority: u8) -> Self {
+impl<T> Task<T> {
+    pub fn new(f: fn(State<'_, T>), hz: f32, max_time_micros: u16, priority: u8) -> Self {
         Self {
             f,
             hz,
@@ -19,11 +22,20 @@ impl Task {
             last_run: 0,
         }
     }
+
+    pub fn fast(f: fn(State<'_, T>)) -> Self {
+        Self::new(f, 0., 0, 0)
+    }
 }
 
-pub struct Scheduler<'a, C> {
-    common_tasks: &'a [Task],
-    vehicle_tasks: &'a [Task],
+pub struct State<'a, T> {
+    pub controller: &'a mut T,
+    pub now: u32,
+}
+
+pub struct Scheduler<C, T, const A: usize, const B: usize> {
+    common_tasks: [Task<T>; A],
+    vehicle_tasks: [Task<T>; B],
     clock: C,
     num_tasks: u8,
     tick_counter: u16,
@@ -40,22 +52,22 @@ pub struct Scheduler<'a, C> {
     extra_loop_us: u32,
 }
 
-impl<'a, C> Scheduler<'a, C>
+impl<C, T, const A: usize, const B: usize> Scheduler<C, T, A, B>
 where
     C: Clock<T = u32>,
 {
     pub fn new(
-        common_tasks: &'a [Task],
-        vehicle_tasks: &'a [Task],
+        common_tasks: [Task<T>; A],
+        vehicle_tasks: [Task<T>; B],
         clock: C,
         loop_rate_hz: i16,
     ) -> Self {
         let loop_period_us = (1000000 / loop_rate_hz as i32) as _;
         Self {
+            num_tasks: (common_tasks.len() + vehicle_tasks.len()) as _,
             common_tasks,
             vehicle_tasks,
             clock,
-            num_tasks: (common_tasks.len() + vehicle_tasks.len()) as _,
             tick_counter: 0,
             loop_rate_hz,
             loop_period_us,
@@ -69,9 +81,7 @@ where
         }
     }
 
-    pub fn run<I: IntertialSensor>(&mut self, inertial_sensor: &mut I) -> Result<(), Error> {
-        inertial_sensor.sample();
-
+    pub fn run(&mut self, controller: &mut T) -> Result<(), Error> {
         let sample_time_us = Microseconds::try_from(self.clock.try_now()?.duration_since_epoch())
             .unwrap()
             .0;
@@ -105,7 +115,7 @@ where
         // add in extra loop time determined by not achieving scheduler tasks
         time_available += self.extra_loop_us;
 
-        self.run_with_time_available(time_available)?;
+        self.run_with_time_available(controller, time_available)?;
 
         if self.task_not_achieved > 0 {
             // add some extra time to the budget
@@ -129,10 +139,11 @@ where
         Ok(())
     }
 
-    pub fn run_with_time_available(&mut self, time_available: u32) -> Result<(), Error> {
-        let run_started_usec = self.clock.try_now()?;
-        let now = run_started_usec;
-
+    pub fn run_with_time_available(
+        &mut self,
+        controller: &mut T,
+        time_available: u32,
+    ) -> Result<(), Error> {
         let mut vehicle_tasks_offset = 0;
         let mut common_tasks_offset = 0;
 
@@ -210,7 +221,11 @@ where
                 self.task_time_allowed = self.loop_period_us as _;
             }
 
-            (task.f)();
+            let now = Milliseconds::try_from(self.clock.try_now()?.duration_since_epoch())
+                .unwrap()
+                .0;
+
+            (task.f)(State { controller, now });
         }
 
         Ok(())
