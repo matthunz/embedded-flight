@@ -84,7 +84,7 @@ impl Default for MultiCopterAttitudeController {
 }
 
 impl MultiCopterAttitudeController {
-    /// Calculate the motor output of the controller (in -1 ~ +1).
+    /// Calculate the motor output of the controller (in -1 ~ +1) .
     pub fn motor_output(&mut self, gyro: Vector3<f32>, now_ms: u32) -> MotorOutput<f32> {
         self.motor_output_with_limit(gyro, now_ms, [false; 3])
     }

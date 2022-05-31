@@ -84,6 +84,7 @@ where
     E: ESC<Output = T>,
     T: Float + FloatConst + FromPrimitive,
 {
+    /// Create a new `MotorMatrix` for a quad-copter with 4 ESC motors.
     pub fn quad(a: E, b: E, c: E, d: E) -> Self {
         Self::from_motors([
             Motor::from_angle(a, T::from_i8(90).unwrap(), T::from_i8(1).unwrap()),

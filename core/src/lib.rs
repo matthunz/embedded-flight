@@ -1,11 +1,16 @@
 #![cfg_attr(not(test), no_std)]
 
-use nalgebra::Vector3;
+use nalgebra::{Quaternion, Vector3};
 
 pub mod filter;
 
 pub mod scheduler;
 
+pub trait IntertialSensor {
+    fn attitude(&mut self) -> Quaternion<f32>;
+
+    fn gyro(&mut self) -> Vector3<f32>;
+}
 
 /// Motor output containing the desired pitch, roll, and yaw control and feed forward in -1 ~ +1.
 #[derive(Debug)]

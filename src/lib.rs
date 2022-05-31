@@ -28,29 +28,10 @@
 #![cfg_attr(not(test), no_std)]
 
 pub use embedded_flight_control as control;
+pub use embedded_flight_core as core;
 pub use embedded_flight_motors as motors;
 
 pub mod copter;
 pub use copter::MultiCopter;
 
 use nalgebra::Vector3;
-
-pub trait A {
-    fn angle_rates(&mut self) -> Vector3<f32>;
-
-    fn attitude(&mut self) -> Vector3<f32>;
-
-    fn local_position(&mut self) -> Vector3<f32>;
-
-    fn local_velocity(&mut self) -> Vector3<f32>;
-}
-
-pub trait AHRS {
-    fn angle_rates(&mut self) -> Vector3<f32>;
-
-    fn attitude(&mut self) -> Vector3<f32>;
-
-    fn local_position(&mut self) -> Vector3<f32>;
-
-    fn local_velocity(&mut self) -> Vector3<f32>;
-}

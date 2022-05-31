@@ -1,14 +1,11 @@
 use embedded_flight_control::attitude::MultiCopterAttitudeController;
-use embedded_flight_core::scheduler::{Scheduler, State, Task};
+use embedded_flight_core::{
+    scheduler::{Scheduler, State, Task},
+    IntertialSensor,
+};
 use embedded_flight_motors::{esc::ESC, MotorMatrix};
 use embedded_time::Clock;
 use nalgebra::{Quaternion, Vector3};
-
-pub trait IntertialSensor {
-    fn attitude(&mut self) -> Quaternion<f32>;
-
-    fn gyro(&mut self) -> Vector3<f32>;
-}
 
 pub struct MultiCopterState<E, const N: usize> {
     pub attitude: Quaternion<f32>,

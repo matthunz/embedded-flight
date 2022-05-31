@@ -93,7 +93,11 @@ where
             self.last_loop_time_s = (sample_time_us - self.loop_timer_start_us) as f32 * 1.0e-6;
         }
 
-        self.tick_counter += 1;
+        if self.tick_counter == u16::MAX {
+            self.tick_counter = 0;
+        } else {
+            self.tick_counter += 1;
+        }
 
         // run all the tasks that are due to run. Note that we only
         // have to call this once per loop, as the tasks are scheduled
