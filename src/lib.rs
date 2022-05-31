@@ -1,28 +1,48 @@
+//! # embedded-flight
+//! A `#![no_std]` flight software library for embedded rust
+//!
+//! # Examples
+//!
+//! For more check out the [basic](https://github.com/matthunz/embedded-flight/blob/main/examples/basic.rs) example on GitHub.
+//!
+//! Create and run a [`MultiCopter`] from a motor matrix, inertial sensor, clock, and frequency (in hz).
+//! ```ignore
+//!     use embedded_flight::MultiCopter;
+//!     use embedded_flight::motors::MotorMatrix;
+//!     
+//!     // Create a quad-copter motor matrix from 4 ESCs
+//!     let motor_matrix = MotorMatrix::quad(ESC(0), ESC(1), ESC(2), ESC(3));
+//!
+//!     // Create the quad-copter
+//!     let mut copter = MultiCopter::new(
+//!         motor_matrix,
+//!         ExampleInertialSensor,
+//!         ExampleClock,
+//!         400
+//!     );
+//!
+//!     // Run the tasks in the scheduler and output to the motors in a loop
+//!     // By default this will stabilize the attitude
+//!     copter.run();
 //! ```
-//! use embedded_flight::control::PositionController;
-//! use nalgebra::Vector3;
 //!
-//! // Current state of the craft
-//! let position = Vector3::zeros();
-//! let velocity = Vector3::new(1., 1., 1.);
-//! let attitude = Vector3::zeros();
-//! let gyro = Vector3::zeros();
+//! Use the lower level [`MultiCopterAttitudeController`](control::attitude::MultiCopterAttitudeController) to get the motor output for a desired attitude:
+//! ```
+//! use embedded_flight::control::attitude::MultiCopterAttitudeController;
+//! use nalgebra::{Vector3, Quaternion};
 //!
-//! // Jerk moments of position and velocity to apply
-//! let position_cmd = Vector3::new(1., 1., 1.);
-//! let velocity_cmd = Vector3::new(0., 0., 1.);
+//! let mut controller = MultiCopterAttitudeController::default();
 //!
-//! let controller = PositionController::default();
-//!
-//! let moment = controller.position_control(
-//!     position_cmd,
-//!     velocity_cmd,
-//!     position,
-//!     velocity,
-//!     attitude,
-//!     gyro
+//! // Input the desired attitude and angular velocity with the current attitude
+//! controller.attitude_controller.input(
+//!     Quaternion::default(),
+//!     Vector3::default(),
+//!     Quaternion::default(),
 //! );
-//! dbg!(moment);
+//!
+//! // Output the control to the motors with the current gyroscope data.
+//! let output = controller.motor_output(Vector3::default(), 1);
+//! dbg!(output);
 //! ```
 
 #![cfg_attr(not(test), no_std)]
@@ -33,5 +53,3 @@ pub use embedded_flight_motors as motors;
 
 pub mod copter;
 pub use copter::MultiCopter;
-
-use nalgebra::Vector3;

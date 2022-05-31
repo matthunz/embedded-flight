@@ -2,10 +2,10 @@ use embedded_flight_motors::{esc::ESC, MotorMatrix};
 use embedded_time::{rate::Fraction, Clock, Instant};
 use nalgebra::{Quaternion, Vector3};
 
-use embedded_flight::core::IntertialSensor;
+use embedded_flight::core::InertialSensor;
 use embedded_flight::MultiCopter;
 
-struct ExampleESC;
+struct ExampleESC(pub u8);
 
 impl ESC for ExampleESC {
     type Output = f32;
@@ -17,7 +17,7 @@ impl ESC for ExampleESC {
 
 struct ExampleInertialSensor;
 
-impl IntertialSensor for ExampleInertialSensor {
+impl InertialSensor for ExampleInertialSensor {
     fn attitude(&mut self) -> Quaternion<f32> {
         Quaternion::default()
     }
@@ -40,8 +40,10 @@ impl Clock for ExampleClock {
 }
 
 fn main() {
-    let motor_matrix = MotorMatrix::quad(ExampleESC, ExampleESC, ExampleESC, ExampleESC);
+    let motor_matrix =
+        MotorMatrix::quad(ExampleESC(0), ExampleESC(1), ExampleESC(2), ExampleESC(3));
 
     let mut copter = MultiCopter::new(motor_matrix, ExampleInertialSensor, ExampleClock, 400);
+
     copter.run();
 }

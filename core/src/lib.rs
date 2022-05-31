@@ -6,7 +6,7 @@ pub mod filter;
 
 pub mod scheduler;
 
-pub trait IntertialSensor {
+pub trait InertialSensor {
     fn attitude(&mut self) -> Quaternion<f32>;
 
     fn gyro(&mut self) -> Vector3<f32>;

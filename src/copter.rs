@@ -1,7 +1,7 @@
 use embedded_flight_control::attitude::MultiCopterAttitudeController;
 use embedded_flight_core::{
     scheduler::{Scheduler, State, Task},
-    IntertialSensor,
+    InertialSensor,
 };
 use embedded_flight_motors::{esc::ESC, MotorMatrix};
 use embedded_time::Clock;
@@ -23,7 +23,7 @@ pub struct MultiCopter<C, I, E, const N: usize> {
 impl<C, I, E, const N: usize> MultiCopter<C, I, E, N>
 where
     C: Clock<T = u32>,
-    I: IntertialSensor,
+    I: InertialSensor,
     E: ESC<Output = f32>,
 {
     pub fn new(
@@ -32,16 +32,7 @@ where
         clock: C,
         loop_rate_hz: i16,
     ) -> Self {
-        let motor_output_task = Task::fast(|state: State<'_, MultiCopterState<E, N>>| {
-            let motor_output = state
-                .controller
-                .attitude_controller
-                .motor_output(state.controller.gyro, state.now);
-
-            state.controller.motor_matrix.output(motor_output);
-        });
-
-        let vehicle_tasks = [motor_output_task];
+        let vehicle_tasks = [motor_output_task()];
         let scheduler = Scheduler::new([], vehicle_tasks, clock, loop_rate_hz);
 
         Self {
@@ -64,4 +55,19 @@ where
             self.scheduler.run(&mut self.state).unwrap();
         }
     }
+}
+
+/// Create the fast task to run body rate control and output to the motors.
+pub fn motor_output_task<E, const N: usize>() -> Task<MultiCopterState<E, N>>
+where
+    E: ESC<Output = f32>,
+{
+    Task::fast(|state: State<'_, MultiCopterState<E, N>>| {
+        let motor_output = state
+            .controller
+            .attitude_controller
+            .motor_output(state.controller.gyro, state.now);
+
+        state.controller.motor_matrix.output(motor_output);
+    })
 }

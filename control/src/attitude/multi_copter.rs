@@ -19,7 +19,6 @@ use nalgebra::Vector3;
 /// let output = controller.motor_output(Vector3::default(), 1);
 /// dbg!(output);
 /// ```
-
 pub struct MultiCopterAttitudeController {
     // The angular velocity (in radians per second) in the body frame.
     pub roll_rate: PID,
