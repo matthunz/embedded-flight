@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+embedded-time = "0.12.1"
 num-traits = "0.2.15"
 nalgebra = "0.31.0"

@@ -59,8 +59,8 @@ impl PID {
             initial_filt_E_hz,
             initial_filt_D_hz,
             dt,
-           0.,
-           1.
+            0.,
+            1.,
         )
     }
 
@@ -83,7 +83,18 @@ impl PID {
             error: 0.,
             derivative: 0.,
             dt,
-            info: Info { target: 0., actual: 0., error: 0., p: 0., i: 0., d: 0., ff: 0., d_mod: 0., slew_rate: 0., limit: false },
+            info: Info {
+                target: 0.,
+                actual: 0.,
+                error: 0.,
+                p: 0.,
+                i: 0.,
+                d: 0.,
+                ff: 0.,
+                d_mod: 0.,
+                slew_rate: 0.,
+                limit: false,
+            },
             slew_limiter: SlewLimiter::new(initial_srmax, initial_srtau),
             slew_limit_scale: initial_srtau,
             integrator: 0.,

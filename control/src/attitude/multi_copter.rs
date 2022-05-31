@@ -3,6 +3,23 @@ use crate::PID;
 use embedded_flight_core::MotorOutput;
 use nalgebra::Vector3;
 
+/// ```
+/// use embedded_flight_control::MultiCopterAttitudeController;
+///
+/// let mut controller = MultiCopterAttitudeController::default();
+///
+/// // Input the desired attitude and angular velocity with the current attitude
+/// controller.attitude_controller.input(
+///     Quaternion::default(),
+///     Vector3::default(),
+///     Quaternion::default(),
+/// );
+///
+/// // Output the control to the motors with the current gyroscope data.
+/// let output = controller.motor_output(Vector3::default(), 1);
+/// dbg!(output);
+/// ```
+
 pub struct MultiCopterAttitudeController {
     // The angular velocity (in radians per second) in the body frame.
     pub roll_rate: PID,
@@ -67,12 +84,17 @@ impl Default for MultiCopterAttitudeController {
 }
 
 impl MultiCopterAttitudeController {
-    /// Returns a tuple containing the desired pitch, roll, and yaw control and feed forward in -1 ~ +1.
-    pub fn rate_control(
+    /// Calculate the motor output of the controller (in -1 ~ +1).
+    pub fn motor_output(&mut self, gyro: Vector3<f32>, now_ms: u32) -> MotorOutput<f32> {
+        self.motor_output_with_limit(gyro, now_ms, [false; 3])
+    }
+
+    /// Calculate the motor output of the controller (in -1 ~ +1) with an optional limit for roll, pitch, and yaw.
+    pub fn motor_output_with_limit(
         &mut self,
         gyro: Vector3<f32>,
-        limit: [bool; 3],
         now_ms: u32,
+        limit: [bool; 3],
     ) -> MotorOutput<f32> {
         // Move throttle vs attitude mixing towards desired.
         // Called from here because this is conveniently called on every iteration
@@ -145,16 +167,10 @@ impl MultiCopterAttitudeController {
 
 #[cfg(test)]
 mod tests {
-    use nalgebra::{Vector3, Quaternion};
+    use nalgebra::{Quaternion, Vector3};
 
     use super::MultiCopterAttitudeController;
 
     #[test]
-    fn f() {
-        let mut ac = MultiCopterAttitudeController::default();
-        ac.attitude_controller.input(Quaternion::default(), Vector3::default(), Quaternion::default());
-
-        let output = ac.rate_control(Vector3::default(), [false; 3], 1);
-        dbg!(output);
-    }
+    fn f() {}
 }
