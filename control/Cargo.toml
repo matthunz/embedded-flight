@@ -1,12 +1,12 @@
 [package]
 name = "embedded-flight-control"
 description = "Embedded flight control library"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-embedded-flight-core = { path = "../core" }
+embedded-flight-core = "0.1.0"
 nalgebra = "0.31.0"

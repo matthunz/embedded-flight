@@ -1,6 +1,6 @@
 [package]
 name = "embedded-flight"
-version = "0.1.2"
+version = "0.2.0"
 description = "Embedded flight library"
 edition = "2021"
 license = "MIT"
@@ -14,8 +14,8 @@ members = [
 ]
 
 [dependencies]
-embedded-flight-core = { path = "./core" }
-embedded-flight-control = { path = "./control" }
-embedded-flight-motors = { path = "./motors" }
+embedded-flight-core = "0.1.0"
+embedded-flight-control = "0.2.0"
+embedded-flight-motors = "0.1.1"
 embedded-time = "0.12.1"
 nalgebra = "0.31.0"
