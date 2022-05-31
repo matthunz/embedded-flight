@@ -25,7 +25,7 @@
 //! dbg!(moment);
 //! ```
 
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 pub use embedded_flight_control as control;
 pub use embedded_flight_motors as motors;
