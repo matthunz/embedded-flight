@@ -3,28 +3,67 @@ use crate::PID;
 use embedded_flight_core::MotorOutput;
 use nalgebra::Vector3;
 
-pub fn euler_rate_to_ang_vel(
-    euler_rad: Vector3<f32>,
-    euler_rate_rads: Vector3<f32>,
-) -> Vector3<f32> {
-    let sin_theta = euler_rad.y.sin();
-    let cos_theta = euler_rad.y.cos();
-    let sin_phi = euler_rad.x.sin();
-    let cos_phi = euler_rad.x.cos();
-
-    Vector3::new(
-        euler_rate_rads.x - sin_theta * euler_rate_rads.z,
-        cos_phi * euler_rate_rads.y + sin_phi * cos_theta * euler_rate_rads.z,
-        -sin_phi * euler_rate_rads.y + cos_theta * cos_phi * euler_rate_rads.z,
-    )
-}
-
 pub struct MultiCopterAttitudeController {
     // The angular velocity (in radians per second) in the body frame.
     pub roll_rate: PID,
     pub pitch_rate: PID,
     pub yaw_rate: PID,
     pub attitude_controller: AttitudeController,
+}
+
+impl Default for MultiCopterAttitudeController {
+    fn default() -> Self {
+        const AC_ATC_MULTI_RATE_RP_P: f32 = 0.135;
+        const AC_ATC_MULTI_RATE_RP_I: f32 = 0.135;
+        const AC_ATC_MULTI_RATE_RP_D: f32 = 0.0036;
+        const AC_ATC_MULTI_RATE_RP_IMAX: f32 = 0.5;
+        const AC_ATC_MULTI_RATE_RP_FILT_HZ: f32 = 20.;
+        const AC_ATC_MULTI_RATE_YAW_P: f32 = 0.180;
+        const AC_ATC_MULTI_RATE_YAW_I: f32 = 0.018;
+        const AC_ATC_MULTI_RATE_YAW_D: f32 = 0.;
+        const AC_ATC_MULTI_RATE_YAW_IMAX: f32 = 0.5;
+        const AC_ATC_MULTI_RATE_YAW_FILT_HZ: f32 = 2.5;
+
+        // 400 hz
+        let dt = 0.0025;
+
+        Self {
+            roll_rate: PID::new(
+                AC_ATC_MULTI_RATE_RP_P,
+                AC_ATC_MULTI_RATE_RP_I,
+                AC_ATC_MULTI_RATE_RP_D,
+                0.,
+                AC_ATC_MULTI_RATE_RP_IMAX,
+                AC_ATC_MULTI_RATE_RP_FILT_HZ,
+                0.,
+                AC_ATC_MULTI_RATE_RP_FILT_HZ,
+                dt,
+            ),
+            pitch_rate: PID::new(
+                AC_ATC_MULTI_RATE_RP_P,
+                AC_ATC_MULTI_RATE_RP_I,
+                AC_ATC_MULTI_RATE_RP_D,
+                0.,
+                AC_ATC_MULTI_RATE_RP_IMAX,
+                AC_ATC_MULTI_RATE_RP_FILT_HZ,
+                0.,
+                AC_ATC_MULTI_RATE_RP_FILT_HZ,
+                dt,
+            ),
+            yaw_rate: PID::new(
+                AC_ATC_MULTI_RATE_YAW_P,
+                AC_ATC_MULTI_RATE_YAW_I,
+                AC_ATC_MULTI_RATE_YAW_D,
+                0.,
+                AC_ATC_MULTI_RATE_YAW_IMAX,
+                AC_ATC_MULTI_RATE_RP_FILT_HZ,
+                AC_ATC_MULTI_RATE_YAW_FILT_HZ,
+                0.,
+                dt,
+            ),
+            attitude_controller: Default::default(),
+        }
+    }
 }
 
 impl MultiCopterAttitudeController {
@@ -95,10 +134,27 @@ impl MultiCopterAttitudeController {
                     - self.attitude_controller.throttle_rpy_mix_desired,
             );
         }
+
         self.attitude_controller.throttle_rpy_mix = self
             .attitude_controller
             .throttle_rpy_mix
             .max(0.1)
             .min(self.attitude_controller.attitude_control_max);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use nalgebra::{Vector3, Quaternion};
+
+    use super::MultiCopterAttitudeController;
+
+    #[test]
+    fn f() {
+        let mut ac = MultiCopterAttitudeController::default();
+        ac.attitude_controller.input(Quaternion::default(), Vector3::default(), Quaternion::default());
+
+        let output = ac.rate_control(Vector3::default(), [false; 3], 1);
+        dbg!(output);
     }
 }

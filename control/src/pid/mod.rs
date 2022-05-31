@@ -38,6 +38,68 @@ pub struct PID {
 }
 
 impl PID {
+    pub fn new(
+        initial_p: f32,
+        initial_i: f32,
+        initial_d: f32,
+        initial_ff: f32,
+        initial_imax: f32,
+        initial_filt_T_hz: f32,
+        initial_filt_E_hz: f32,
+        initial_filt_D_hz: f32,
+        dt: f32,
+    ) -> Self {
+        Self::with_slew_rate(
+            initial_p,
+            initial_i,
+            initial_d,
+            initial_ff,
+            initial_imax,
+            initial_filt_T_hz,
+            initial_filt_E_hz,
+            initial_filt_D_hz,
+            dt,
+           0.,
+           1.
+        )
+    }
+
+    pub fn with_slew_rate(
+        initial_p: f32,
+        initial_i: f32,
+        initial_d: f32,
+        initial_ff: f32,
+        initial_imax: f32,
+        initial_filt_T_hz: f32,
+        initial_filt_E_hz: f32,
+        initial_filt_D_hz: f32,
+        dt: f32,
+        initial_srmax: f32,
+        initial_srtau: f32,
+    ) -> Self {
+        Self {
+            reset_filter: true,
+            target: 0.,
+            error: 0.,
+            derivative: 0.,
+            dt,
+            info: Info { target: 0., actual: 0., error: 0., p: 0., i: 0., d: 0., ff: 0., d_mod: 0., slew_rate: 0., limit: false },
+            slew_limiter: SlewLimiter::new(initial_srmax, initial_srtau),
+            slew_limit_scale: initial_srtau,
+            integrator: 0.,
+            kp: initial_p,
+            ki: initial_i,
+            kd: initial_d,
+            ki_max: initial_imax,
+            kff: initial_ff,
+            filter_t_hz: initial_filt_T_hz,
+            filter_e_hz: initial_filt_E_hz,
+            filter_d_hz: initial_filt_D_hz,
+        }
+    }
+}
+
+impl PID {
     pub fn target_filter_alpha(&self) -> f32 {
         self.alpha(self.filter_t_hz)
     }

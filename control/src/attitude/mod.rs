@@ -1,5 +1,4 @@
 use core::f32::consts::PI;
-
 use nalgebra::{Quaternion, Vector2, Vector3};
 
 mod multi_copter;
@@ -34,22 +33,106 @@ pub struct AttitudeController {
     pub feed_forward_scalar: f32,
     pub throttle_rpy_mix: f32,
     pub throttle_rpy_mix_desired: f32,
+
+    // Maximum throttle mix
     pub attitude_control_max: f32,
     pub dt: f32,
-    /// The acceleration limit in radians/s
-    // TODO arducopter uses centidegrees/s
+
+    // @Param: ACCEL_P_MAX
+    // @DisplayName: Acceleration Max
+    // @Description: Maximum acceleration
+    // @Units: radian/s/s
+    // @Range: 0 180000
+    // @Increment: 1000
+    // @Values: 0:Disabled, 30000:VerySlow, 72000:Slow, 108000:Medium, 162000:Fast
+    // @User: Advanced
     pub accel_max: Vector3<f32>,
-    use_sqrt_controller: bool,
+    pub use_sqrt_controller: bool,
+
+    // @Param: ANG_RLL_P
+    // @DisplayName: Roll axis angle controller P gain
+    // @Description: Roll axis angle controller P gain.  Converts the error between the desired roll angle and actual angle to a desired roll rate
+    // @Range: 3.000 12.000
+    // @Range{Sub}: 0.0 12.000
+    // @User: Standard
     pub p_angle_roll: P,
+
+    // @Param: ANG_PIT_P
+    // @DisplayName: Pitch axis angle controller P gain
+    // @Description: Pitch axis angle controller P gain.  Converts the error between the desired pitch angle and actual angle to a desired pitch rate
+    // @Range: 3.000 12.000
+    // @Range{Sub}: 0.0 12.000
+    // @User: Standard
     pub p_angle_pitch: P,
+
+    // @Param: ANG_YAW_P
+    // @DisplayName: Yaw axis angle controller P gain
+    // @Description: Yaw axis angle controller P gain.  Converts the error between the desired yaw angle and actual angle to a desired yaw rate
+    // @Range: 3.000 12.000
+    // @Range{Sub}: 0.0 6.000
+    // @User: Standard
     pub p_angle_yaw: P,
     pub thrust_error_angle: f32,
     pub attitude_target: Quaternion<f32>,
-    // In radians!
+
+    // @Param: RATE_P_MAX
+    // @DisplayName: Angular Velocity Max for Pitch
+    // @Description: Maximum angular velocity in pitch axis
+    // @Units: radians/s
+    // @Range: 0 1080
+    // @Increment: 1
+    // @Values: 0:Disabled, 60:Slow, 180:Medium, 360:Fast
+    // @User: Advanced
     pub ang_vel_max: Vector3<f32>,
     pub ang_vel_target: Vector3<f32>,
+
+    // @Param: RATE_FF_ENAB
+    // @DisplayName: Rate Feedforward Enable
+    // @Description: Controls whether body-frame rate feedfoward is enabled or disabled
+    // @Values: 0:Disabled, 1:Enabled
+    // @User: Advanced
     pub rate_bf_ff_enabled: bool,
+
+    // @Param: INPUT_TC
+    // @DisplayName: Attitude control input time constant
+    // @Description: Attitude control input time constant.  Low numbers lead to sharper response, higher numbers to softer response
+    // @Units: s
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
+    // @User: Standard
     pub input_tc: f32,
+
+    pub euler_angle_target: Vector3<f32>,
+    pub euler_rate_target: Vector3<f32>,
+}
+
+impl Default for AttitudeController {
+    fn default() -> Self {
+        Self {
+            ang_vel_body: Vector3::zeros(),
+            actuator_sysid: Vector3::zeros(),
+            sysid_ang_vel_body: Vector3::zeros(),
+            feed_forward_scalar: 1.,
+            throttle_rpy_mix: 0.5,
+            throttle_rpy_mix_desired: 0.5,
+            attitude_control_max: 5.,
+            dt: Default::default(),
+            accel_max: Vector3::new(110000., 110000., 27000.),
+            use_sqrt_controller: true,
+            p_angle_roll: P::new(4.5),
+            p_angle_pitch: P::new(4.5),
+            p_angle_yaw: P::new(4.5),
+            thrust_error_angle: 0.,
+            attitude_target: Quaternion::default(),
+            ang_vel_max: Vector3::zeros(),
+            ang_vel_target: Vector3::zeros(),
+            rate_bf_ff_enabled: true,
+            input_tc: 0.15,
+            euler_angle_target: Vector3::zeros(),
+            euler_rate_target: Vector3::zeros(),
+        }
+    }
 }
 
 impl AttitudeController {
@@ -57,11 +140,12 @@ impl AttitudeController {
     /// Returns `attitude_desired` updated by the integral of the angular velocity
     pub fn input(
         &mut self,
-        attitude_desired: Quaternion<f32>,
+        mut attitude_desired: Quaternion<f32>,
         ang_vel_target: Vector3<f32>,
         attitude_body: Quaternion<f32>,
     ) -> Quaternion<f32> {
-        let attitude_error_quat = self.attitude_target.try_inverse().unwrap() * attitude_desired;
+        let attitude_error_quat =
+            self.attitude_target.try_inverse().unwrap_or_default() * attitude_desired;
         let attitude_error_angle = to_axis_angle(attitude_error_quat);
 
         // Limit the angular velocity
@@ -103,22 +187,31 @@ impl AttitudeController {
             self.ang_vel_target = ang_vel_target;
         }
 
-        // TODO
+        // calculate the attitude target euler angles
+        self.euler_angle_target = to_euler(self.attitude_target);
 
-        self.run(attitude_body);
+        // Convert body-frame angular velocity into euler angle derivative of desired attitude
+        if let Some(euler_rate) =
+            ang_vel_to_euler_rate(self.euler_angle_target, self.ang_vel_target)
+        {
+            self.euler_rate_target = euler_rate;
+        }
+
+        let attitude_desired_update = from_axis_angle(ang_vel_target * self.dt);
+        attitude_desired = (attitude_desired * attitude_desired_update).normalize();
+
+        // Call quaternion attitude controller
+        self.attitude_control(attitude_body);
 
         attitude_desired
     }
 
     /// Calculate the body frame angular velocities to follow the target attitude.
     /// `attitude_body` represents a quaternion rotation in NED frame to the body
-    pub fn run(&mut self, attitude_body: Quaternion<f32>) {
+    pub fn attitude_control(&mut self, attitude_body: Quaternion<f32>) {
         // Vector representing the angular error to rotate the thrust vector using x and y and heading using z
-        let (_attitude_target, attitude_error) = self.thrust_heading_rotation_angles(
-            self.attitude_target,
-            attitude_body,
-            self.thrust_error_angle,
-        );
+        let (_attitude_target, attitude_error) =
+            self.thrust_heading_rotation_angles(self.attitude_target, attitude_body);
 
         // Compute the angular velocity corrections in the body frame from the attitude error
         self.ang_vel_body = self.angular_velocity_target_from_attitude_error(attitude_error);
@@ -130,12 +223,11 @@ impl AttitudeController {
         &self,
         mut attitude_target: Quaternion<f32>,
         attitude_body: Quaternion<f32>,
-        thrust_error_angle: f32,
     ) -> (Quaternion<f32>, Vector3<f32>) {
         let ac_attitude_accel_y_controller_max_radss = 120f32.to_radians();
 
         let (thrust_angle, thrust_vector_correction, mut attitude_error, thrust_error_angle) =
-            thrust_vector_rotation_angles(attitude_target, attitude_body, thrust_error_angle);
+            thrust_vector_rotation_angles(attitude_target, attitude_body);
 
         // Todo: Limit roll an pitch error based on output saturation and maximum error.
 
@@ -218,8 +310,79 @@ impl AttitudeController {
     }
 }
 
+// get euler roll angle
+pub fn euler_roll(q: Quaternion<f32>) -> f32 {
+    (2. * (q[0] * q[1] + q[2] * q[3])).atan2(1. - 2. * (q[1] * q[1] + q[2] * q[2]))
+}
+
+// get euler pitch angle
+pub fn euler_pitch(q: Quaternion<f32>) -> f32 {
+    safe_asin(2. * (q[0] * q[2] - q[3] * q[1]))
+}
+
+// get euler yaw angle
+pub fn euler_yaw(q: Quaternion<f32>) -> f32 {
+    (2. * (q[0] * q[3] + q[1] * q[2])).atan2(1. - 2. * (q[2] * q[2] + q[3] * q[3]))
+}
+
+// create eulers from a quaternion
+pub fn to_euler(q: Quaternion<f32>) -> Vector3<f32> {
+    Vector3::new(euler_roll(q), euler_pitch(q), euler_yaw(q))
+}
+
+fn safe_asin(f: f32) -> f32 {
+    if f.is_nan() {
+        0.
+    } else if f >= 1. {
+        PI * 2.
+    } else if f <= -1. {
+        -PI * 2.
+    } else {
+        f.asin()
+    }
+}
+
+// Convert an angular velocity vector to a 321-intrinsic euler angle derivative (in radians/second).
+// Returns None if the vehicle is pitched 90 degrees up or down
+pub fn ang_vel_to_euler_rate(
+    euler_rad: Vector3<f32>,
+    ang_vel_rads: Vector3<f32>,
+) -> Option<Vector3<f32>> {
+    let sin_theta = euler_rad.y.sin();
+    let cos_theta = euler_rad.y.cos();
+    let sin_phi = euler_rad.x.sin();
+    let cos_phi = euler_rad.x.cos();
+
+    // When the vehicle pitches all the way up or all the way down, the euler angles become discontinuous.
+    // In this case, we return None
+    if cos_theta != 0. {
+        let euler_rate_rads = Vector3::new(
+            ang_vel_rads.x
+                + sin_phi * (sin_theta / cos_theta) * ang_vel_rads.y
+                + cos_phi * (sin_theta / cos_theta) * ang_vel_rads.z,
+            cos_phi * ang_vel_rads.y - sin_phi * ang_vel_rads.z,
+            (sin_phi / cos_theta) * ang_vel_rads.y + (cos_phi / cos_theta) * ang_vel_rads.z,
+        );
+        Some(euler_rate_rads)
+    } else {
+        None
+    }
+}
+
 pub struct P {
-    kp: f32,
+    pub kp: f32,
+}
+
+impl Default for P {
+    fn default() -> Self {
+        Self::new(0.)
+    }
+}
+
+impl P {
+    pub fn new(kp: f32) -> Self {
+        Self { kp }
+    }
 }
 
 pub fn ang_vel_limit(mut euler_rad: Vector3<f32>, ang_vel_max: Vector3<f32>) -> Vector3<f32> {
@@ -251,8 +414,6 @@ pub fn ang_vel_limit(mut euler_rad: Vector3<f32>, ang_vel_max: Vector3<f32>) -> 
 pub fn thrust_vector_rotation_angles(
     attitude_target: Quaternion<f32>,
     attitude_body: Quaternion<f32>,
-
-    mut thrust_error_angle: f32,
 ) -> (f32, Quaternion<f32>, Vector3<f32>, f32) {
     // The direction of thrust is [0,0,-1] is any body-fixed frame, inc. body frame and target frame.
     let thrust_vector_up = Vector3::new(0., 0., -1.);
@@ -275,7 +436,7 @@ pub fn thrust_vector_rotation_angles(
     let mut thrust_vec_cross = att_body_thrust_vec.cross(&att_target_thrust_vec);
 
     // the dot product is used to calculate the angle between the target and desired thrust vectors
-    thrust_error_angle = ((att_body_thrust_vec.dot(&att_target_thrust_vec))
+    let thrust_error_angle = ((att_body_thrust_vec.dot(&att_target_thrust_vec))
         .max(-1.)
         .min(1.))
     .acos();
@@ -290,7 +451,10 @@ pub fn thrust_vector_rotation_angles(
 
     // thrust_vector_correction is defined relative to the body frame but its axis `thrust_vec_cross` was computed in
     // the inertial frame. First rotate it by the inverse of attitude_body to express it back in the body frame
-    thrust_vec_cross = mul(attitude_body.try_inverse().unwrap(), thrust_vec_cross);
+    thrust_vec_cross = mul(
+        attitude_body.try_inverse().unwrap_or_default(),
+        thrust_vec_cross,
+    );
     let thrust_vector_correction = from_axis_angle_with_theta(thrust_vec_cross, thrust_error_angle);
 
     // calculate the angle error in x and y.
@@ -300,8 +464,8 @@ pub fn thrust_vector_rotation_angles(
 
     // calculate the remaining rotation required after thrust vector is rotated transformed to the body frame
     // heading_vector_correction
-    let heading_vec_correction_quat = thrust_vector_correction.try_inverse().unwrap()
-        * attitude_body.try_inverse().unwrap()
+    let heading_vec_correction_quat = thrust_vector_correction.try_inverse().unwrap_or_default()
+        * attitude_body.try_inverse().unwrap_or_default()
         * attitude_target;
 
     // calculate the angle error in z (x and y should be zero here).
@@ -408,10 +572,10 @@ fn safe_sqrt(v: f32) -> f32 {
 fn mul(quat: Quaternion<f32>, v: Vector3<f32>) -> Vector3<f32> {
     // This uses the formula
     //
-    //    v2 = v1 + 2 q1 * qv x v1 + 2 qv x qv x v1
+    //    v2 = v1 + 2 q[0] * qv x v1 + 2 qv x qv x v1
     //
     // where "x" is the cross product (explicitly inlined for performance below),
-    // "q1" is the scalar part and "qv" is the vector part of this quaternion
+    // "q[0]" is the scalar part and "qv" is the vector part of this quaternion
 
     let mut ret = v;
 
@@ -419,7 +583,7 @@ fn mul(quat: Quaternion<f32>, v: Vector3<f32>) -> Vector3<f32> {
     let mut uv = [
         quat[2] * v.z - quat[3] * v.y,
         quat[3] * v.x - quat[1] * v.z,
-        quat[3] * v.y - quat[4] * v.x,
+        quat[1] * v.y - quat[2] * v.x,
     ];
 
     uv[0] += uv[0];

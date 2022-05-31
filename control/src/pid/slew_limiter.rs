@@ -27,6 +27,29 @@ pub struct SlewLimiter<const N: usize> {
 }
 
 impl<const N: usize> SlewLimiter<N> {
+    pub fn new(slew_rate_max: f32, slew_rate_tau: f32) -> Self {
+        Self {
+            slew_rate_max,
+            slew_rate_tau,
+            slew_filter: LowPassFilter::default(),
+            output_slew_rate: 0.,
+            _modifier_slew_rate: 0.,
+            last_sample: 0.,
+            _max_pos_slew_rate: 0.,
+            _max_neg_slew_rate: 0.,
+            _max_pos_slew_event_ms: 0,
+            _max_neg_slew_event_ms: 0,
+            _pos_event_index: 0,
+            _neg_event_index: 0,
+            _pos_event_ms: [0; N],
+            _neg_event_ms: [0; N],
+            _pos_event_stored: false,
+            _neg_event_stored: false,
+            window_ms: 300,
+            modifier_gain: 1.5,
+            cutoff_freq: 25.,
+        }
+    }
     /// Apply the filter to a sample, returning multiplier between 0 and 1 to keep output within slew rate
     pub fn modifier(&mut self, sample: f32, dt: f32, now_ms: u32) -> f32 {
         if self.slew_rate_max <= 0. {

@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not_test, no_std)]
 
 mod body_rate;
 pub use body_rate::BodyRateController;

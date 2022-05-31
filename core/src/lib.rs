@@ -3,6 +3,7 @@ use nalgebra::Vector3;
 pub mod filter;
 
 /// Motor output containing the desired pitch, roll, and yaw control and feed forward in -1 ~ +1.
+#[derive(Debug)]
 pub struct MotorOutput<T> {
     pub  control: Vector3<T>,
      pub feed_forward: Vector3<T>
