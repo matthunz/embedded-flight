@@ -116,7 +116,7 @@ where
         time_available: u32,
     ) -> Result<(), Error> {
         for task in self.tasks.iter_mut() {
-            if task.priority > 3 {
+            if !task.is_high_priority {
                 let dt = self.tick_counter - task.last_run;
                 // A 0hz task should be ran at the rate of the scheduler loop
                 let interval_ticks = if task.hz == 0. {
