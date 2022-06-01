@@ -3,27 +3,28 @@
 //!
 //! # Examples
 //!
-//! For more check out the [basic](https://github.com/matthunz/embedded-flight/blob/main/examples/basic.rs) example on GitHub.
+//! For more check out the 
+//! [basic](https://github.com/matthunz/embedded-flight/blob/main/examples/basic.rs) or 
+//! [quad](https://github.com/matthunz/embedded-flight/tree/main/examples/quad)
+//! examples on GitHub.
 //!
 //! Create and run a [`MultiCopter`] from a motor matrix, inertial sensor, clock, and frequency (in hz).
 //! ```ignore
-//!     use embedded_flight::MultiCopter;
-//!     use embedded_flight::motors::MotorMatrix;
-//!     
-//!     // Create a quad-copter motor matrix from 4 ESCs
-//!     let motor_matrix = MotorMatrix::quad(ESC(0), ESC(1), ESC(2), ESC(3));
+//! use embedded_flight::copter::{MultiCopter, multi_copter_tasks};
+//! use embedded_flight::motors::MotorMatrix;
 //!
-//!     // Create the quad-copter
-//!     let mut copter = MultiCopter::new(
-//!         motor_matrix,
-//!         ExampleInertialSensor,
-//!         ExampleClock,
-//!         400
-//!     );
+//! // Create a quad-copter motor matrix from 4 ESCs
+//! let motor_matrix = MotorMatrix::quad(ESC(0), ESC(1), ESC(2), ESC(3));
 //!
-//!     // Run the tasks in the scheduler and output to the motors in a loop
-//!     // By default this will stabilize the attitude
-//!     copter.run();
+//! // Initialize the tasks to run from the scheduler
+//! // By default this will stabilize the attitude
+//! let mut tasks = multi_copter_tasks();
+//!
+//! // Create the quad-copter
+//! let mut copter = MultiCopter::new(motors, imu, &mut tasks, clock, 400);
+//!
+//! // Run the tasks in the scheduler and output to the motors in a loop
+//! drone.run()?
 //! ```
 //!
 //! Use the lower level [`MultiCopterAttitudeController`](control::attitude::MultiCopterAttitudeController) to get the motor output for a desired attitude:

@@ -1,28 +1,21 @@
-//! Testing PWM output for pre-defined pin combination: all pins for default mapping
-
-#![deny(unsafe_code)]
-#![allow(clippy::empty_loop)]
 #![no_main]
 #![no_std]
 
 extern crate panic_halt;
 
-use cortex_m::peripheral::SYST;
 use cortex_m_rt::entry;
 use embedded_flight::{
     copter::multi_copter_tasks,
     core::InertialSensor,
-    motors::{esc::Builder, MotorMatrix, ESC, RCESC},
+    motors::{esc::Builder, MotorMatrix, ESC},
     MultiCopter,
 };
-use embedded_hal::PwmPin;
 use embedded_time::{rate::Fraction, Clock, Instant};
 use nalgebra::{Quaternion, Vector3};
 use stm32f1xx_hal::{
     pac,
     prelude::*,
-    time::ms,
-    timer::{Channel, Counter, CounterHz, SysCounter, SysCounterUs, Tim2NoRemap, Timer},
+    timer::{SysCounterUs, Tim2NoRemap, Timer},
 };
 
 struct SysClock {
@@ -93,14 +86,12 @@ fn main() -> ! {
     let c = &mut Builder::default().build(p3) as &mut dyn ESC<Output = u16>;
     let d = &mut Builder::default().build(p4) as &mut dyn ESC<Output = u16>;
 
-    let mut motors = MotorMatrix::quad(a, b, c, d);
-    motors.thrust_boost_ratio = 0f32;
-
+    let motors = MotorMatrix::quad(a, b, c, d);
     let imu = IMU {};
-
     let mut tasks = multi_copter_tasks();
 
-    let drone = MultiCopter::new(motors, imu, &mut tasks, clock, 400);
+    let mut drone = MultiCopter::new(motors, imu, &mut tasks, clock, 400);
+    drone.run().unwrap();
 
     loop {}
 }
