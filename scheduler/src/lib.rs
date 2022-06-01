@@ -1,7 +1,24 @@
-use embedded_time::{clock::Error, duration::Microseconds, Clock};
+use embedded_time::{clock, duration::Microseconds, Clock, ConversionError};
 
 mod task;
 pub use task::{State, Task};
+
+pub enum Error {
+    Clock(clock::Error),
+    Time(ConversionError),
+}
+
+impl From<clock::Error> for Error {
+    fn from(clock_error: clock::Error) -> Self {
+        Error::Clock(clock_error)
+    }
+}
+
+impl From<ConversionError> for Error {
+    fn from(time_error: ConversionError) -> Self {
+        Error::Time(time_error)
+    }
+}
 
 pub struct Scheduler<'a, C, T> {
     tasks: &'a mut [Task<T>],
@@ -64,7 +81,7 @@ where
         // the first call to the scheduler they won't run on a later
         // call until scheduler.tick() is called again
         let loop_us = self.loop_period_us;
-        let now = Microseconds::try_from(self.clock.try_now()?.duration_since_epoch()).unwrap();
+        let now = Microseconds::try_from(self.clock.try_now()?.duration_since_epoch())?;
 
         let mut time_available = 0;
         let loop_tick_us = now.0 - sample_time_us;
@@ -159,9 +176,8 @@ where
     }
 
     fn micros_since_epoch(&mut self) -> Result<Microseconds<u32>, Error> {
-        self.clock
-            .try_now()
-            .map(|instant| Microseconds::try_from(instant.duration_since_epoch()).unwrap())
+        let instant = self.clock.try_now()?;
+        Microseconds::try_from(instant.duration_since_epoch()).map_err(Into::into)
     }
 }
 

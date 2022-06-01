@@ -1,13 +1,17 @@
 use embedded_time::duration::Microseconds;
 
+use crate::Error;
+
 pub struct State<'a, T> {
     pub system: &'a mut T,
     pub now: Microseconds<u32>,
     pub available: Microseconds<u32>,
 }
 
+type TaskFn<T> = fn(State<'_, T>) -> Result<(), Error>;
+
 pub struct Task<T> {
-    pub f: fn(State<'_, T>),
+    pub f: TaskFn<T>,
     pub hz: f32,
     pub max_time_micros: u16,
     pub is_high_priority: bool,
@@ -15,7 +19,7 @@ pub struct Task<T> {
 }
 
 impl<T> Task<T> {
-    pub fn new(f: fn(State<'_, T>)) -> Self {
+    pub fn new(f: TaskFn<T>) -> Self {
         Self {
             f,
             hz: 0.,
@@ -25,7 +29,7 @@ impl<T> Task<T> {
         }
     }
 
-    pub fn high_priority(f: fn(State<'_, T>)) -> Self {
+    pub fn high_priority(f: TaskFn<T>) -> Self {
         Self::new(f).with_high_priority(true)
     }
 

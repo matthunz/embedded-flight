@@ -1,7 +1,7 @@
 use embedded_flight_control::attitude::MultiCopterAttitudeController;
 use embedded_flight_core::InertialSensor;
 use embedded_flight_motors::{esc::ESC, MotorMatrix};
-use embedded_flight_scheduler::{Scheduler, State, Task};
+use embedded_flight_scheduler::{Error, Scheduler, State, Task};
 use embedded_time::Clock;
 use nalgebra::{Quaternion, Vector3};
 
@@ -43,12 +43,12 @@ where
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), Error> {
         loop {
             self.state.attitude = self.inertial_sensor.attitude();
             self.state.gyro = self.inertial_sensor.gyro();
 
-            self.scheduler.run(&mut self.state).unwrap();
+            self.scheduler.run(&mut self.state)?;
         }
     }
 }
@@ -73,5 +73,7 @@ where
             .motor_output(state.system.gyro, state.now.0);
 
         state.system.motor_matrix.output(motor_output);
+
+        Ok(())
     })
 }
