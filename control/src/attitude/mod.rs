@@ -1,5 +1,6 @@
 use core::f32::consts::PI;
 use nalgebra::{Quaternion, Vector2, Vector3};
+use num_traits::Float;
 
 mod multi_copter;
 pub use multi_copter::MultiCopterAttitudeController;

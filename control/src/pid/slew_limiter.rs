@@ -1,4 +1,5 @@
 use embedded_flight_core::filter::LowPassFilter;
+use num_traits::Float;
 
 /// Slew rate limiting filter.
 /// Used to prevent oscillation of a controller

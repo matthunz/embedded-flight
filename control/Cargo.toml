@@ -8,5 +8,14 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-embedded-flight-core = "0.1.0"
-nalgebra = "0.31.0"
+embedded-flight-core = { path = "../core" }
+
+[dependencies.nalgebra]
+version = "0.31.0"
+default-features = false
+features = ["libm-force"]
+
+[dependencies.num-traits]
+version= "0.2.15"
+default-features = false
+features = ["libm"]

@@ -10,7 +10,7 @@ pub trait ESC {
     fn output(&mut self, output: Self::Output);
 }
 
-impl<T: ESC> ESC for &mut T {
+impl<T: ESC + ?Sized> ESC for &mut T {
     type Output = T::Output;
 
     fn arm(&mut self) {

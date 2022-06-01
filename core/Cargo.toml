@@ -9,5 +9,9 @@ license = "MIT"
 
 [dependencies]
 embedded-time = "0.12.1"
-num-traits = "0.2.15"
-nalgebra = "0.31.0"
+nalgebra = { version = "0.31.0", default-features = false }
+
+[dependencies.num-traits]
+version= "0.2.15"
+default-features = false
+features = ["libm"]

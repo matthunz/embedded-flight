@@ -1,6 +1,6 @@
 use crate::ESC;
 use embedded_flight_core::{filter::LowPassFilter, MotorOutput};
-use num_traits::{Float, FloatConst, FromPrimitive};
+use num_traits::{Float, FloatConst, FromPrimitive, NumCast};
 
 mod motor;
 pub use motor::Motor;
@@ -28,7 +28,8 @@ pub struct MotorMatrix<E, T, const N: usize> {
 
 impl<E, T> MotorMatrix<E, T, 4>
 where
-    E: ESC<Output = T>,
+E: ESC,
+    E::Output: NumCast,
     T: Float + FloatConst + FromPrimitive,
 {
     /// Create a new `MotorMatrix` for a quad-copter with 4 ESC motors.
@@ -44,7 +45,8 @@ where
 
 impl<E, T, const N: usize> MotorMatrix<E, T, N>
 where
-    E: ESC<Output = T>,
+    E: ESC,
+    E::Output: NumCast,
     T: Float + FloatConst + FromPrimitive,
 {
     pub fn from_motors(motors: [Motor<E, T>; N]) -> Self {
@@ -202,7 +204,7 @@ where
             motor.thrust_rpyt_out = (throttle_thrust_best_plus_adj * motor.throttle_factor)
                 + (self.rpy_scale * motor.thrust_rpyt_out);
 
-            motor.esc.output(motor.thrust_rpyt_out)
+            motor.esc.output(<<E as ESC>::Output as NumCast>::from(motor.thrust_rpyt_out).unwrap())
         }
 
         limit

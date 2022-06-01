@@ -1,0 +1,16 @@
+[package]
+name = "quad"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+cortex-m-rt = "0.7.1"
+embedded-hal = "0.2.7"
+embedded-flight = { path = "../../" }
+panic-halt = "0.2.0"
+
+[dependencies.stm32f1xx-hal]
+features = ["stm32f103", "rt", "medium"]
+version = "0.9.0"

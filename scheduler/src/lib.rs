@@ -1,3 +1,5 @@
+#![no_std]
+
 use embedded_time::{duration::Microseconds, Clock};
 
 mod error;

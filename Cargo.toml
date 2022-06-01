@@ -15,9 +15,9 @@ members = [
 ]
 
 [dependencies]
-embedded-flight-core = "0.1.0"
-embedded-flight-control = "0.2.0"
-embedded-flight-motors = "0.1.1"
+embedded-flight-core = { path = "./core" }
+embedded-flight-control = { path = "./control" }
+embedded-flight-motors = { path = "./motors" }
 embedded-flight-scheduler = { path = "./scheduler" }
 embedded-time = "0.12.1"
-nalgebra = "0.31.0"
+nalgebra = { version = "0.31.0", default-features = false }

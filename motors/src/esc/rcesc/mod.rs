@@ -1,11 +1,14 @@
 mod builder;
+use core::ops::Neg;
+
 pub use builder::Builder;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::PwmPin;
-use num_traits::{Float, One};
+use num_traits::{Float, One, Num};
 
 use super::ESC;
 
+// TODO scale final pwm output
 pub struct RCESC<T: PwmPin> {
     arm: T::Duty,
     min: T::Duty,
@@ -16,7 +19,7 @@ pub struct RCESC<T: PwmPin> {
 impl<T> RCESC<T>
 where
     T: PwmPin,
-    T::Duty: Float,
+    T::Duty: Num + Copy,
 {
     pub fn new(arm: T::Duty, min: T::Duty, max: T::Duty, pin: T) -> Self {
         Self { arm, min, max, pin }
@@ -46,18 +49,15 @@ where
 impl<T> ESC for RCESC<T>
 where
     T: PwmPin,
-    T::Duty: Float + Clone,
+    T::Duty:  Num + Copy,
 {
     type Output = T::Duty;
 
     fn arm(&mut self) {
-        self.output(self.arm.clone())
+        self.output(self.arm)
     }
 
     fn output(&mut self, output: Self::Output) {
-        let duty = (output - -T::Duty::one()) * (self.max - self.min)
-            / (T::Duty::one() - -T::Duty::one())
-            + T::Duty::one();
-        self.pin.set_duty(duty);
+        self.pin.set_duty(output);
     }
 }
