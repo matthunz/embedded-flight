@@ -6,10 +6,13 @@ edition = "2021"
 [workspace]
 
 [dependencies]
+cortex-m = "0.7.5"
 cortex-m-rt = "0.7.1"
 embedded-hal = "0.2.7"
 embedded-flight = { path = "../../" }
+embedded-time = "0.12.1"
 panic-halt = "0.2.0"
+nalgebra = { version = "0.31.0", default-features = false }
 
 [dependencies.stm32f1xx-hal]
 features = ["stm32f103", "rt", "medium"]

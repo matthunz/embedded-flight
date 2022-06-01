@@ -21,3 +21,7 @@ embedded-flight-motors = { path = "./motors" }
 embedded-flight-scheduler = { path = "./scheduler" }
 embedded-time = "0.12.1"
 nalgebra = { version = "0.31.0", default-features = false }
+
+[dependencies.num-traits]
+version= "0.2.15"
+default-features = false

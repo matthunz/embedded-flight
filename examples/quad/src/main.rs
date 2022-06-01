@@ -7,21 +7,54 @@
 
 extern crate panic_halt;
 
+use cortex_m::peripheral::SYST;
 use cortex_m_rt::entry;
 use embedded_flight::{
+    copter::multi_copter_tasks,
+    core::InertialSensor,
     motors::{esc::Builder, MotorMatrix, ESC, RCESC},
     MultiCopter,
 };
 use embedded_hal::PwmPin;
+use embedded_time::{rate::Fraction, Clock, Instant};
+use nalgebra::{Quaternion, Vector3};
 use stm32f1xx_hal::{
     pac,
     prelude::*,
     time::ms,
-    timer::{Channel, Tim2NoRemap},
+    timer::{Channel, Counter, CounterHz, SysCounter, SysCounterUs, Tim2NoRemap, Timer},
 };
+
+struct SysClock {
+    counter: SysCounterUs,
+}
+
+impl Clock for SysClock {
+    type T = u32;
+
+    const SCALING_FACTOR: Fraction = Fraction::new(1, 1);
+
+    fn try_now(&self) -> Result<Instant<Self>, embedded_time::clock::Error> {
+        let instant = self.counter.now();
+        Ok(Instant::new(instant.ticks()))
+    }
+}
+
+struct IMU {}
+
+impl InertialSensor for IMU {
+    fn attitude(&mut self) -> Quaternion<f32> {
+        todo!()
+    }
+
+    fn gyro(&mut self) -> Vector3<f32> {
+        todo!()
+    }
+}
 
 #[entry]
 fn main() -> ! {
+    let cp = cortex_m::Peripherals::take().unwrap();
     let p = pac::Peripherals::take().unwrap();
 
     let mut flash = p.FLASH.constrain();
@@ -51,6 +84,10 @@ fn main() -> ! {
     p3.enable();
     p4.enable();
 
+    // Configure the syst timer to trigger an update every second
+    let counter = Timer::syst(cp.SYST, &clocks).counter_us();
+    let clock = SysClock { counter };
+
     let a = &mut Builder::default().build(p1) as &mut dyn ESC<Output = u16>;
     let b = &mut Builder::default().build(p2) as &mut dyn ESC<Output = u16>;
     let c = &mut Builder::default().build(p3) as &mut dyn ESC<Output = u16>;
@@ -58,6 +95,12 @@ fn main() -> ! {
 
     let mut motors = MotorMatrix::quad(a, b, c, d);
     motors.thrust_boost_ratio = 0f32;
+
+    let imu = IMU {};
+
+    let mut tasks = multi_copter_tasks();
+
+    let drone = MultiCopter::new(motors, imu, &mut tasks, clock, 400);
 
     loop {}
 }

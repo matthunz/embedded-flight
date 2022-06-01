@@ -4,6 +4,7 @@ use embedded_flight_motors::{esc::ESC, MotorMatrix};
 use embedded_flight_scheduler::{Error, Scheduler, State, Task};
 use embedded_time::Clock;
 use nalgebra::{Quaternion, Vector3};
+use num_traits::NumCast;
 
 pub struct MultiCopterState<E, const N: usize> {
     pub attitude: Quaternion<f32>,
@@ -22,7 +23,8 @@ impl<'t, C, I, E, const N: usize> MultiCopter<'t, C, I, E, N>
 where
     C: Clock<T = u32>,
     I: InertialSensor,
-    E: ESC<Output = f32>,
+    E: ESC,
+    E::Output: NumCast
 {
     pub fn new(
         motor_matrix: MotorMatrix<E, f32, N>,
@@ -56,7 +58,8 @@ where
 /// Create an array of multi copter tasks to control attitude and output to the motors.
 pub fn multi_copter_tasks<E, const N: usize>() -> [Task<MultiCopterState<E, N>>; 1]
 where
-    E: ESC<Output = f32>,
+    E: ESC,
+    E::Output: NumCast
 {
     [motor_output_task()]
 }
@@ -64,7 +67,8 @@ where
 /// Create the high priority task to run body rate control and output to the motors.
 pub fn motor_output_task<E, const N: usize>() -> Task<MultiCopterState<E, N>>
 where
-    E: ESC<Output = f32>,
+E: ESC,
+E::Output: NumCast
 {
     Task::high_priority(|state: State<'_, MultiCopterState<E, N>>| {
         let motor_output = state
