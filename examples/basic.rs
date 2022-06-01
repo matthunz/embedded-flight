@@ -13,7 +13,7 @@ impl ESC for ExampleESC {
 
     fn arm(&mut self) {}
 
-    fn output(&mut self, output: Self::Output) {}
+    fn output(&mut self, _output: Self::Output) {}
 }
 
 struct ExampleInertialSensor;

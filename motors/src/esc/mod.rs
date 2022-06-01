@@ -1,5 +1,5 @@
-pub mod rcesc;
-pub use rcesc::RCESC;
+mod rcesc;
+pub use rcesc::{Builder, RCESC};
 
 pub trait ESC {
     type Output;
