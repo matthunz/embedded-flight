@@ -18,5 +18,6 @@ members = [
 embedded-flight-core = "0.1.0"
 embedded-flight-control = "0.2.0"
 embedded-flight-motors = "0.1.1"
+embedded-flight-scheduler = { path = "./scheduler" }
 embedded-time = "0.12.1"
 nalgebra = "0.31.0"

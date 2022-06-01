@@ -50,6 +50,7 @@
 pub use embedded_flight_control as control;
 pub use embedded_flight_core as core;
 pub use embedded_flight_motors as motors;
+pub use embedded_flight_scheduler as scheduler;
 
 pub mod copter;
 pub use copter::MultiCopter;

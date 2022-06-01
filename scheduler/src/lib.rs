@@ -42,7 +42,7 @@ where
         }
     }
 
-    pub fn run(&mut self, controller: &mut T) -> Result<(), Error> {
+    pub fn run(&mut self, system: &mut T) -> Result<(), Error> {
         let sample_time_us = self.micros_since_epoch()?.0;
 
         if self.loop_timer_start_us == 0 {
@@ -76,7 +76,7 @@ where
         // add in extra loop time determined by not achieving scheduler tasks
         time_available += self.extra_loop_us;
 
-        self.run_with_time_available_inner(controller, now, time_available)?;
+        self.run_with_time_available_inner(system, now, time_available)?;
 
         if self.task_not_achieved > 0 {
             // add some extra time to the budget
@@ -102,16 +102,16 @@ where
 
     pub fn run_with_time_available(
         &mut self,
-        controller: &mut T,
+        system: &mut T,
         time_available: u32,
     ) -> Result<(), Error> {
         let now = self.micros_since_epoch()?;
-        self.run_with_time_available_inner(controller, now, time_available)
+        self.run_with_time_available_inner(system, now, time_available)
     }
 
     fn run_with_time_available_inner(
         &mut self,
-        controller: &mut T,
+        system: &mut T,
         now: Microseconds<u32>,
         time_available: u32,
     ) -> Result<(), Error> {
@@ -149,7 +149,7 @@ where
             }
 
             (task.f)(State {
-                controller,
+                system,
                 now,
                 available: Microseconds::new(time_available),
             });

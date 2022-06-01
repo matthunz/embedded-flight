@@ -1,3 +1,4 @@
+use embedded_flight::copter::multi_copter_tasks;
 use embedded_flight_motors::{esc::ESC, MotorMatrix};
 use embedded_time::{rate::Fraction, Clock, Instant};
 use nalgebra::{Quaternion, Vector3};
@@ -42,8 +43,14 @@ impl Clock for ExampleClock {
 fn main() {
     let motor_matrix =
         MotorMatrix::quad(ExampleESC(0), ExampleESC(1), ExampleESC(2), ExampleESC(3));
+    let mut tasks = multi_copter_tasks();
 
-    let mut copter = MultiCopter::new(motor_matrix, ExampleInertialSensor, ExampleClock, 400);
-
+    let mut copter = MultiCopter::new(
+        motor_matrix,
+        ExampleInertialSensor,
+        &mut tasks,
+        ExampleClock,
+        400,
+    );
     copter.run();
 }

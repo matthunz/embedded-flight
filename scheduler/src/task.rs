@@ -1,9 +1,9 @@
 use embedded_time::duration::Microseconds;
 
 pub struct State<'a, T> {
-    pub controller: &'a mut T,
+    pub system: &'a mut T,
     pub now: Microseconds<u32>,
-    pub available: Microseconds<u32>
+    pub available: Microseconds<u32>,
 }
 
 pub struct Task<T> {
@@ -23,6 +23,10 @@ impl<T> Task<T> {
             is_high_priority: false,
             last_run: 0,
         }
+    }
+
+    pub fn high_priority(f: fn(State<'_, T>)) -> Self {
+        Self::new(f).with_high_priority(true)
     }
 
     pub fn with_hz(mut self, hz: f32) -> Self {
