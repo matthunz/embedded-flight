@@ -4,8 +4,6 @@ use nalgebra::{Quaternion, Vector3};
 
 pub mod filter;
 
-pub mod scheduler;
-
 pub trait InertialSensor {
     fn attitude(&mut self) -> Quaternion<f32>;
 

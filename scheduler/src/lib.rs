@@ -1,25 +1,12 @@
-use embedded_time::{clock, duration::Microseconds, Clock, ConversionError};
+use embedded_time::{duration::Microseconds, Clock};
+
+mod error;
+pub use error::Error;
 
 mod task;
 pub use task::{State, Task};
 
-pub enum Error {
-    Clock(clock::Error),
-    Time(ConversionError),
-}
-
-impl From<clock::Error> for Error {
-    fn from(clock_error: clock::Error) -> Self {
-        Error::Clock(clock_error)
-    }
-}
-
-impl From<ConversionError> for Error {
-    fn from(time_error: ConversionError) -> Self {
-        Error::Time(time_error)
-    }
-}
-
+/// Task scheduler for flight controllers
 pub struct Scheduler<'a, C, T, E = Error> {
     tasks: &'a mut [Task<T, E>],
     clock: C,
@@ -42,6 +29,7 @@ where
     C: Clock<T = u32>,
     E: From<Error>,
 {
+    /// Create a new scheduler from a slice of tasks, a clock, and the loop rate (in hz)
     pub fn new(tasks: &'a mut [Task<T, E>], clock: C, loop_rate_hz: i16) -> Self {
         let loop_period_us = (1000000 / loop_rate_hz as i32) as _;
         Self {
@@ -60,9 +48,11 @@ where
         }
     }
 
+    /// Calculate the time available and run as many tasks as possible.
     pub fn run(&mut self, system: &mut T) -> Result<(), E> {
         let sample_time_us = self.micros_since_epoch()?.0;
 
+        // Set initial loop_timer_start if not set
         if self.loop_timer_start_us == 0 {
             self.loop_timer_start_us = sample_time_us;
             self.last_loop_time_s = 1. / self.loop_rate_hz as f32;
@@ -70,6 +60,7 @@ where
             self.last_loop_time_s = (sample_time_us - self.loop_timer_start_us) as f32 * 1.0e-6;
         }
 
+        // Reset the tick counter if we reach the limit
         if self.tick_counter == u16::MAX {
             self.tick_counter = 0;
         } else {
@@ -118,6 +109,7 @@ where
         Ok(())
     }
 
+    /// Run as many tasks as possible in the given `time_available`.
     pub fn run_with_time_available(
         &mut self,
         system: &mut T,
