@@ -148,7 +148,11 @@ where
                 self.task_time_allowed = self.loop_period_us as _;
             }
 
-            (task.f)(State { controller, now });
+            (task.f)(State {
+                controller,
+                now,
+                available: Microseconds::new(time_available),
+            });
         }
 
         Ok(())

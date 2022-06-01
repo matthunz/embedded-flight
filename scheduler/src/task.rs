@@ -3,6 +3,7 @@ use embedded_time::duration::Microseconds;
 pub struct State<'a, T> {
     pub controller: &'a mut T,
     pub now: Microseconds<u32>,
+    pub available: Microseconds<u32>
 }
 
 pub struct Task<T> {
