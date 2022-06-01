@@ -8,18 +8,18 @@ pub struct State<'a, T> {
     pub available: Microseconds<u32>,
 }
 
-type TaskFn<T> = fn(State<'_, T>) -> Result<(), Error>;
+type TaskFn<T, E> = fn(State<'_, T>) -> Result<(), E>;
 
-pub struct Task<T> {
-    pub f: TaskFn<T>,
+pub struct Task<T, E = Error> {
+    pub f: TaskFn<T, E>,
     pub hz: f32,
     pub max_time_micros: u16,
     pub is_high_priority: bool,
     pub last_run: u16,
 }
 
-impl<T> Task<T> {
-    pub fn new(f: TaskFn<T>) -> Self {
+impl<T, E> Task<T, E> {
+    pub fn new(f: TaskFn<T, E>) -> Self {
         Self {
             f,
             hz: 0.,
@@ -29,7 +29,7 @@ impl<T> Task<T> {
         }
     }
 
-    pub fn high_priority(f: TaskFn<T>) -> Self {
+    pub fn high_priority(f: TaskFn<T, E>) -> Self {
         Self::new(f).with_high_priority(true)
     }
 

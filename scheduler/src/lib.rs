@@ -20,8 +20,8 @@ impl From<ConversionError> for Error {
     }
 }
 
-pub struct Scheduler<'a, C, T> {
-    tasks: &'a mut [Task<T>],
+pub struct Scheduler<'a, C, T, E = Error> {
+    tasks: &'a mut [Task<T, E>],
     clock: C,
     tick_counter: u16,
     loop_rate_hz: i16,
@@ -37,11 +37,12 @@ pub struct Scheduler<'a, C, T> {
     extra_loop_us: u32,
 }
 
-impl<'a, C, T> Scheduler<'a, C, T>
+impl<'a, C, T, E> Scheduler<'a, C, T, E>
 where
     C: Clock<T = u32>,
+    E: From<Error>,
 {
-    pub fn new(tasks: &'a mut [Task<T>], clock: C, loop_rate_hz: i16) -> Self {
+    pub fn new(tasks: &'a mut [Task<T, E>], clock: C, loop_rate_hz: i16) -> Self {
         let loop_period_us = (1000000 / loop_rate_hz as i32) as _;
         Self {
             tasks,
@@ -59,7 +60,7 @@ where
         }
     }
 
-    pub fn run(&mut self, system: &mut T) -> Result<(), Error> {
+    pub fn run(&mut self, system: &mut T) -> Result<(), E> {
         let sample_time_us = self.micros_since_epoch()?.0;
 
         if self.loop_timer_start_us == 0 {
@@ -81,7 +82,7 @@ where
         // the first call to the scheduler they won't run on a later
         // call until scheduler.tick() is called again
         let loop_us = self.loop_period_us;
-        let now = Microseconds::try_from(self.clock.try_now()?.duration_since_epoch())?;
+        let now = self.micros_since_epoch()?;
 
         let mut time_available = 0;
         let loop_tick_us = now.0 - sample_time_us;
@@ -121,7 +122,7 @@ where
         &mut self,
         system: &mut T,
         time_available: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), E> {
         let now = self.micros_since_epoch()?;
         self.run_with_time_available_inner(system, now, time_available)
     }
@@ -131,10 +132,11 @@ where
         system: &mut T,
         now: Microseconds<u32>,
         time_available: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), E> {
         for task in self.tasks.iter_mut() {
             if !task.is_high_priority {
                 let dt = self.tick_counter - task.last_run;
+
                 // A 0hz task should be ran at the rate of the scheduler loop
                 let interval_ticks = if task.hz == 0. {
                     1
@@ -165,11 +167,16 @@ where
                 self.task_time_allowed = self.loop_period_us as _;
             }
 
-            (task.f)(State {
+            let state = State {
                 system,
                 now,
                 available: Microseconds::new(time_available),
-            });
+            };
+            (task.f)(state)?;
+
+            // Record the tick counter when we ran
+            // This determines when we next run the event
+            task.last_run = self.tick_counter;
         }
 
         Ok(())
