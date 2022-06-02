@@ -18,7 +18,7 @@ members = [
 embedded-flight-core = "0.1.1"
 embedded-flight-control = "0.2.1"
 embedded-flight-motors = "0.1.2"
-embedded-flight-scheduler = "0.1.0"
+embedded-flight-scheduler = "0.1.1"
 embedded-time = "0.12.1"
 nalgebra = { version = "0.31.0", default-features = false }
 
