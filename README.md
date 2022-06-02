@@ -10,4 +10,5 @@ A framework for creating flying vehicles in embedded rust
 [mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [mit-url]: https://github.com/matthunz/embedded-flight/blob/master/LICENSE.md
 
-[API Docs](https://docs.rs/embedded-flight/latest/embedded_flight/)
+[API Docs](https://docs.rs/embedded-flight/latest/embedded_flight/) |
+[Examples](https://github.com/matthunz/embedded-flight/tree/main/examples)
