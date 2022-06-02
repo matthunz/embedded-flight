@@ -1,0 +1,10 @@
+[package]
+name = "tasks"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+embedded-flight-scheduler = { path = "../../" }
+std-embedded-time = "0.1.0"

@@ -6,6 +6,7 @@ mod error;
 pub use error::Error;
 
 mod task;
+use num_traits::{NumCast, ToPrimitive};
 pub use task::{State, Task};
 
 /// Task scheduler for flight controllers
@@ -28,7 +29,8 @@ pub struct Scheduler<'a, C, T, E = Error> {
 
 impl<'a, C, T, E> Scheduler<'a, C, T, E>
 where
-    C: Clock<T = u32>,
+    C: Clock,
+    C::T: ToPrimitive,
     E: From<Error>,
 {
     /// Create a new scheduler from a slice of tasks, a clock, and the loop rate (in hz)
@@ -65,6 +67,12 @@ where
         // Reset the tick counter if we reach the limit
         if self.tick_counter == u16::MAX {
             self.tick_counter = 0;
+
+            // Todo maybe don't?
+            for task in self.tasks.iter_mut() {
+task.last_run = 0;
+            }
+
         } else {
             self.tick_counter += 1;
         }
@@ -178,7 +186,9 @@ where
 
     fn micros_since_epoch(&mut self) -> Result<Microseconds<u32>, Error> {
         let instant = self.clock.try_now()?;
-        Microseconds::try_from(instant.duration_since_epoch()).map_err(Into::into)
+        let duration = instant.duration_since_epoch();
+        let ms: Microseconds<C::T> = Microseconds::try_from(duration)?;
+        Ok(Microseconds::new(ms.0.to_u32().unwrap()))
     }
 }
 

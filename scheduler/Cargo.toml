@@ -9,3 +9,8 @@ license = "MIT"
 
 [dependencies]
 embedded-time = "0.12.1"
+
+[dependencies.num-traits]
+version= "0.2.15"
+default-features = false
+features = ["libm"]
