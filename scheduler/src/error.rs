@@ -5,7 +5,7 @@ use embedded_time::{clock, ConversionError};
 pub enum Error {
     /// An error from the current [`Clock`].
     Clock(clock::Error),
-    /// An overflow or underflow error occurred during time conversion. 
+    /// An overflow or underflow error occurred during time conversion.
     Time(ConversionError),
 }
 

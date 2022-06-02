@@ -28,12 +28,12 @@
 #![deny(missing_docs)]
 
 use embedded_time::{duration::Microseconds, Clock};
+use num_traits::ToPrimitive;
 
 mod error;
 pub use error::Error;
 
 mod task;
-use num_traits::ToPrimitive;
 pub use task::{Event, Task};
 
 /// Task scheduler for flight controllers
@@ -67,7 +67,7 @@ pub struct Scheduler<'a, C, T, E = Error> {
 
     /// The start time of the run loop (in seconds).
     pub last_loop_time_s: f32,
-    
+
     /// Extra time to spend in the loop to catch up on tasks not achieved (in microseconds).
     pub extra_loop_us: u32,
 }
