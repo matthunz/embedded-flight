@@ -3,7 +3,9 @@ use embedded_time::{clock, ConversionError};
 /// A scheduler error caused by clock timing
 #[derive(Debug)]
 pub enum Error {
+    /// An error from the current [`Clock`].
     Clock(clock::Error),
+    /// An overflow or underflow error occurred during time conversion. 
     Time(ConversionError),
 }
 

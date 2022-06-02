@@ -1,15 +1,19 @@
+use crate::Error;
 use embedded_time::duration::Microseconds;
 
-use crate::Error;
+/// An event containing the current time, available time, and state for a task.
+pub struct Event<'a, T> {
+    /// The state of the system running the scheduler.
+    pub state: &'a mut T,
 
-/// The state of the scheduler for a running task
-pub struct State<'a, T> {
-    pub system: &'a mut T,
+    /// The current time in microseconds.
     pub now: Microseconds<u32>,
+
+    /// The available to run this task time (in microseconds).
     pub available: Microseconds<u32>,
 }
 
-type TaskFn<T, E> = fn(State<'_, T>) -> Result<(), E>;
+type TaskFn<T, E> = fn(Event<'_, T>) -> Result<(), E>;
 
 /// A task to run at specific frequency
 pub struct Task<T, E = Error> {
@@ -30,6 +34,7 @@ pub struct Task<T, E = Error> {
 }
 
 impl<T, E> Task<T, E> {
+    /// Create a new task from the function to run.
     pub fn new(f: TaskFn<T, E>) -> Self {
         Self {
             f,
@@ -40,6 +45,7 @@ impl<T, E> Task<T, E> {
         }
     }
 
+    /// Create a new high priority task from the function to run.
     pub fn high_priority(f: TaskFn<T, E>) -> Self {
         Self::new(f).with_high_priority(true)
     }
@@ -70,8 +76,8 @@ impl<T, E> Task<T, E> {
 
     /// If this task is ready returns the ticks elapsed since the last run.
     /// Otherwise this returns `None`.
-    pub fn ready(&self, tick: u16, ticks: i16) -> Option<u16> {
-        let dt = tick - self.last_run;
+    pub fn ready(&self, current_tick: u16, ticks: i16) -> Option<u16> {
+        let dt = current_tick - self.last_run;
 
         if (dt as i16) >= ticks {
             Some(dt)
@@ -80,8 +86,8 @@ impl<T, E> Task<T, E> {
         }
     }
 
-    /// Run this task at the current tick;
-    pub fn run(&mut self, state: State<'_, T>, tick: u16) -> Result<(), E> {
+    /// Run this task at the current tick.
+    pub fn run(&mut self, state: Event<'_, T>, tick: u16) -> Result<(), E> {
         (self.f)(state)?;
 
         // Record the tick counter when we ran

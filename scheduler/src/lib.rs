@@ -25,6 +25,7 @@
 //! }
 //! ```
 #![no_std]
+#![deny(missing_docs)]
 
 use embedded_time::{duration::Microseconds, Clock};
 
@@ -33,7 +34,7 @@ pub use error::Error;
 
 mod task;
 use num_traits::ToPrimitive;
-pub use task::{State, Task};
+pub use task::{Event, Task};
 
 /// Task scheduler for flight controllers
 pub struct Scheduler<'a, C, T, E = Error> {
@@ -49,7 +50,7 @@ pub struct Scheduler<'a, C, T, E = Error> {
     /// The maximum amount of ticks a task can miss before slowing down the scheduler.
     pub max_task_slowdown: u8,
 
-    // The desired loop rate to run (in hz).
+    /// The desired loop rate to run (in hz).
     pub loop_rate_hz: i16,
 
     // The period of the loop rate (in microseconds).
@@ -96,7 +97,7 @@ where
     }
 
     /// Calculate the time available and run as many tasks as possible.
-    pub fn run(&mut self, system: &mut T) -> Result<(), E> {
+    pub fn run(&mut self, state: &mut T) -> Result<(), E> {
         let sample_time_us = self.micros_since_epoch()?.0;
 
         // Set initial loop_timer_start if not set
@@ -137,7 +138,7 @@ where
         // add in extra loop time determined by not achieving scheduler tasks
         time_available += self.extra_loop_us;
 
-        self.run_with_time_available_inner(system, now, time_available)?;
+        self.run_with_time_available_inner(state, now, time_available)?;
 
         if self.task_not_achieved > 0 {
             // add some extra time to the budget
@@ -199,8 +200,8 @@ where
                 }
             }
 
-            let state = State {
-                system,
+            let state = Event {
+                state: system,
                 now,
                 available: Microseconds::new(time_available),
             };
