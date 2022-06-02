@@ -47,4 +47,23 @@ impl<T, E> Task<T, E> {
         self.is_high_priority = is_high_priority;
         self
     }
+
+    pub fn ticks(&self, loop_rate_hz: i16) -> i16 {
+        // A 0hz task should be ran at the rate of the scheduler loop
+        if self.hz == 0. {
+            1
+        } else {
+            (loop_rate_hz / self.hz as i16).max(1)
+        }
+    }
+    
+    pub fn ready(&self, tick: u16, ticks: i16) -> Option<u16> {
+        let dt = tick - self.last_run;
+
+        if (dt as i16) >= ticks {
+            Some(dt)
+        } else {
+            None
+        }
+    }
 }

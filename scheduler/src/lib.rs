@@ -1,7 +1,8 @@
 //! # embedded-flight-scheduler
-//! 
+//!
 //! Embedded flight real time scheduler library
-//! 
+//!
+//! For more check out the [scheduler](https://github.com/matthunz/embedded-flight/tree/main/examples/scheduler) example on GitHub.
 //! ```ignore
 //! let clock = StandardClock::default();
 //!
@@ -41,7 +42,6 @@ pub struct Scheduler<'a, C, T, E = Error> {
     tick_counter: u16,
     loop_rate_hz: i16,
     loop_period_us: u16,
-    task_time_allowed: u32,
     max_task_slowdown: u8,
     // counters to handle dynamically adjusting extra loop time to
     // cope with low CPU conditions
@@ -67,7 +67,6 @@ where
             tick_counter: 0,
             loop_rate_hz,
             loop_period_us,
-            task_time_allowed: loop_period_us as _,
             max_task_slowdown: 4,
             task_not_achieved: 0,
             task_all_achieved: 0,
@@ -161,36 +160,24 @@ where
     ) -> Result<(), E> {
         for task in self.tasks.iter_mut() {
             if !task.is_high_priority {
-                let dt = self.tick_counter - task.last_run;
+                let ticks = task.ticks(self.loop_rate_hz);
 
-                // A 0hz task should be ran at the rate of the scheduler loop
-                let interval_ticks = if task.hz == 0. {
-                    1
+                if let Some(dt) = task.ready(self.tick_counter, ticks) {
+                    // Check if the scheduler is going beyond the maximum slowdown factor
+                    if dt as i16 >= ticks * self.max_task_slowdown as i16 {
+                        // This will trigger increasing the time budget
+                        self.task_not_achieved += 1;
+                    }
+
+                    if task.max_time_micros as u32 > time_available {
+                        // Not enough time to run this task
+                        // Try to fit another task into the time remaining
+                        continue;
+                    }
                 } else {
-                    (self.loop_rate_hz / task.hz as i16).max(1)
-                };
-
-                if (dt as i16) < interval_ticks {
-                    // this task is not yet scheduled to run again
+                    // This task is not ready
                     continue;
                 }
-
-                // this task is due to run. Do we have enough time to run it?
-                self.task_time_allowed = task.max_time_micros as _;
-
-                if dt as i16 >= interval_ticks * self.max_task_slowdown as i16 {
-                    // we are going beyond the maximum slowdown factor for a
-                    // task. This will trigger increasing the time budget
-                    self.task_not_achieved += 1;
-                }
-
-                if self.task_time_allowed > time_available {
-                    // not enough time to run this task.  Continue loop -
-                    // maybe another task will fit into time remaining
-                    continue;
-                }
-            } else {
-                self.task_time_allowed = self.loop_period_us as _;
             }
 
             let state = State {
