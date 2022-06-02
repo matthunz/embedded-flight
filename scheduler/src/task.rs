@@ -13,10 +13,19 @@ type TaskFn<T, E> = fn(State<'_, T>) -> Result<(), E>;
 
 /// A task to run at specific frequency
 pub struct Task<T, E = Error> {
+    /// The function to run.
     pub f: TaskFn<T, E>,
+
+    /// The desired frequency (in hz) to run the task.
     pub hz: f32,
+
+    /// The max time for this task (in microseconds).
     pub max_time_micros: u16,
+
+    /// Determines if this task should be run every time the scheduler loops.
     pub is_high_priority: bool,
+
+    /// The last tick this task was ran.
     pub last_run: u16,
 }
 
@@ -69,5 +78,16 @@ impl<T, E> Task<T, E> {
         } else {
             None
         }
+    }
+
+    /// Run this task at the current tick;
+    pub fn run(&mut self, state: State<'_, T>, tick: u16) -> Result<(), E> {
+        (self.f)(state)?;
+
+        // Record the tick counter when we ran
+        // This determines when we next run the event
+        self.last_run = tick;
+
+        Ok(())
     }
 }

@@ -37,19 +37,38 @@ pub use task::{State, Task};
 
 /// Task scheduler for flight controllers
 pub struct Scheduler<'a, C, T, E = Error> {
-    tasks: &'a mut [Task<T, E>],
-    clock: C,
-    tick_counter: u16,
-    loop_rate_hz: i16,
+    /// The tasks to run in order of highest to lowest priority.
+    pub tasks: &'a mut [Task<T, E>],
+
+    /// The clock used for timing.
+    pub clock: C,
+
+    /// The current tick, incremented each run.
+    pub tick: u16,
+
+    /// The maximum amount of ticks a task can miss before slowing down the scheduler.
+    pub max_task_slowdown: u8,
+
+    // The desired loop rate to run (in hz).
+    pub loop_rate_hz: i16,
+
+    // The period of the loop rate (in microseconds).
     loop_period_us: u16,
-    max_task_slowdown: u8,
-    // counters to handle dynamically adjusting extra loop time to
-    // cope with low CPU conditions
-    task_not_achieved: u32,
-    task_all_achieved: u32,
-    loop_timer_start_us: u32,
-    last_loop_time_s: f32,
-    extra_loop_us: u32,
+
+    /// The amount of ticks with tasks that exceed the `max_task_slowdown`.
+    pub task_not_achieved: u32,
+
+    /// The amount of ticks with tasks that remain in the `max_task_slowdown`.
+    pub task_all_achieved: u32,
+
+    /// The start time of the run loop (in microseconds).
+    pub loop_timer_start_us: u32,
+
+    /// The start time of the run loop (in seconds).
+    pub last_loop_time_s: f32,
+    
+    /// Extra time to spend in the loop to catch up on tasks not achieved (in microseconds).
+    pub extra_loop_us: u32,
 }
 
 impl<'a, C, T, E> Scheduler<'a, C, T, E>
@@ -64,7 +83,7 @@ where
         Self {
             tasks,
             clock,
-            tick_counter: 0,
+            tick: 0,
             loop_rate_hz,
             loop_period_us,
             max_task_slowdown: 4,
@@ -89,15 +108,15 @@ where
         }
 
         // Reset the tick counter if we reach the limit
-        if self.tick_counter == u16::MAX {
-            self.tick_counter = 0;
+        if self.tick == u16::MAX {
+            self.tick = 0;
 
             // Todo maybe don't?
             for task in self.tasks.iter_mut() {
                 task.last_run = 0;
             }
         } else {
-            self.tick_counter += 1;
+            self.tick += 1;
         }
 
         // run all the tasks that are due to run. Note that we only
@@ -162,7 +181,7 @@ where
             if !task.is_high_priority {
                 let ticks = task.ticks(self.loop_rate_hz);
 
-                if let Some(dt) = task.ready(self.tick_counter, ticks) {
+                if let Some(dt) = task.ready(self.tick, ticks) {
                     // Check if the scheduler is going beyond the maximum slowdown factor
                     if dt as i16 >= ticks * self.max_task_slowdown as i16 {
                         // This will trigger increasing the time budget
@@ -185,11 +204,7 @@ where
                 now,
                 available: Microseconds::new(time_available),
             };
-            (task.f)(state)?;
-
-            // Record the tick counter when we ran
-            // This determines when we next run the event
-            task.last_run = self.tick_counter;
+            task.run(state, self.tick)?;
         }
 
         Ok(())
