@@ -1,5 +1,6 @@
 use embedded_time::{clock, ConversionError};
 
+/// A scheduler error caused by clock timing
 #[derive(Debug)]
 pub enum Error {
     Clock(clock::Error),

@@ -28,7 +28,7 @@ pub struct MotorMatrix<E, T, const N: usize> {
 
 impl<E, T> MotorMatrix<E, T, 4>
 where
-E: ESC,
+    E: ESC,
     E::Output: NumCast,
     T: Float + FloatConst + FromPrimitive,
 {
@@ -204,7 +204,9 @@ where
             motor.thrust_rpyt_out = (throttle_thrust_best_plus_adj * motor.throttle_factor)
                 + (self.rpy_scale * motor.thrust_rpyt_out);
 
-            motor.esc.output(<<E as ESC>::Output as NumCast>::from(motor.thrust_rpyt_out).unwrap())
+            motor
+                .esc
+                .output(<<E as ESC>::Output as NumCast>::from(motor.thrust_rpyt_out).unwrap())
         }
 
         limit

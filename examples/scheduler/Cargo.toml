@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-embedded-flight-scheduler = { path = "../../" }
+embedded-flight-scheduler = { path = "../../scheduler" }
 std-embedded-time = "0.1.0"

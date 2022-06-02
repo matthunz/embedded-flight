@@ -24,7 +24,7 @@ where
     C: Clock<T = u32>,
     I: InertialSensor,
     E: ESC,
-    E::Output: NumCast
+    E::Output: NumCast,
 {
     pub fn new(
         motor_matrix: MotorMatrix<E, f32, N>,
@@ -59,7 +59,7 @@ where
 pub fn multi_copter_tasks<E, const N: usize>() -> [Task<MultiCopterState<E, N>>; 1]
 where
     E: ESC,
-    E::Output: NumCast
+    E::Output: NumCast,
 {
     [motor_output_task()]
 }
@@ -67,8 +67,8 @@ where
 /// Create the high priority task to run body rate control and output to the motors.
 pub fn motor_output_task<E, const N: usize>() -> Task<MultiCopterState<E, N>>
 where
-E: ESC,
-E::Output: NumCast
+    E: ESC,
+    E::Output: NumCast,
 {
     Task::high_priority(|state: State<'_, MultiCopterState<E, N>>| {
         let motor_output = state

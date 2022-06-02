@@ -4,7 +4,7 @@ use core::ops::Neg;
 pub use builder::Builder;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::PwmPin;
-use num_traits::{Float, One, Num};
+use num_traits::{Float, Num, One};
 
 use super::ESC;
 
@@ -49,7 +49,7 @@ where
 impl<T> ESC for RCESC<T>
 where
     T: PwmPin,
-    T::Duty:  Num + Copy,
+    T::Duty: Num + Copy,
 {
     type Output = T::Duty;
 

@@ -3,8 +3,8 @@
 //!
 //! # Examples
 //!
-//! For more check out the 
-//! [basic](https://github.com/matthunz/embedded-flight/blob/main/examples/basic.rs) or 
+//! For more check out the
+//! [basic](https://github.com/matthunz/embedded-flight/blob/main/examples/basic.rs) or
 //! [quad](https://github.com/matthunz/embedded-flight/tree/main/examples/quad)
 //! examples on GitHub.
 //!
