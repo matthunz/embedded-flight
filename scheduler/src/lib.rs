@@ -1,3 +1,28 @@
+//! # embedded-flight-scheduler
+//! 
+//! Embedded flight real time scheduler library
+//! 
+//! ```ignore
+//! let clock = StandardClock::default();
+//!
+//! let a: Task<(), Error> = Task::new(|_| {
+//!    dbg!("A");
+//!    Ok(())
+//! });
+//!
+//! let b: Task<(), Error> = Task::new(|_| {
+//!    dbg!("B");
+//!    Ok(())
+//! });
+//!
+//! let mut tasks = [a.with_hz(2.), b.with_hz(1.)];
+//!
+//! let mut scheduler = Scheduler::new(&mut tasks, clock, 400);
+//!
+//! loop {
+//!    scheduler.run(&mut ())?;
+//! }
+//! ```
 #![no_std]
 
 use embedded_time::{duration::Microseconds, Clock};
@@ -6,7 +31,7 @@ mod error;
 pub use error::Error;
 
 mod task;
-use num_traits::{NumCast, ToPrimitive};
+use num_traits::ToPrimitive;
 pub use task::{State, Task};
 
 /// Task scheduler for flight controllers
@@ -70,9 +95,8 @@ where
 
             // Todo maybe don't?
             for task in self.tasks.iter_mut() {
-task.last_run = 0;
+                task.last_run = 0;
             }
-
         } else {
             self.tick_counter += 1;
         }
