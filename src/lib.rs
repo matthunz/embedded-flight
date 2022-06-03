@@ -55,3 +55,52 @@ pub use embedded_flight_scheduler as scheduler;
 
 pub mod copter;
 pub use copter::MultiCopter;
+use nalgebra::{UnitQuaternion, Vector3};
+
+pub struct IMU {
+    delta_angle_dt: f32,
+    delta_velocity_dt: f32,
+    attitude: UnitQuaternion<f32>,
+    delta_velocity: Vector3<f32>,
+}
+
+impl IMU {
+    // Acceleration in m/s/s
+    pub fn down_sample(
+        &mut self,
+        delta_angle: Vector3<f32>,
+        acceleration: Vector3<f32>,
+        delta_angle_dt: f32,
+        delta_velocity_dt: f32,
+    ) {
+        let delta_velocity = acceleration * delta_velocity_dt;
+        self.down_sample_with_velocity(
+            delta_angle,
+            delta_velocity,
+            delta_angle_dt,
+            delta_velocity_dt,
+        )
+    }
+
+    pub fn down_sample_with_velocity(
+        &mut self,
+        delta_angle: Vector3<f32>,
+        delta_velocity: Vector3<f32>,
+        delta_angle_dt: f32,
+        delta_velocity_dt: f32,
+    ) {
+        // Accumulate the measurement time interval for the delta velocity and angle data
+        self.delta_angle_dt += delta_angle_dt;
+        self.delta_velocity_dt += delta_velocity_dt;
+
+        // Rotate quaternion attitude from previous to new and normalize.
+        // Accumulation using quaternions prevents introduction of coning errors due to down-sampling
+        self.attitude = self.attitude * UnitQuaternion::new(delta_angle);
+
+        // Rotate the latest delta velocity into body frame at the start of accumulation
+        let delta_rotation = self.attitude.to_rotation_matrix();
+
+        // Apply the delta velocity to the delta velocity accumulator
+        self.delta_velocity += delta_rotation * delta_velocity;
+    }
+}
