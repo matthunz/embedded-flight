@@ -1,7 +1,7 @@
 use embedded_flight_control::attitude::MultiCopterAttitudeController;
 use embedded_flight_core::InertialSensor;
 use embedded_flight_motors::{esc::ESC, MotorMatrix};
-use embedded_flight_scheduler::{Error, Scheduler, State, Task};
+use embedded_flight_scheduler::{Error, Event, Scheduler, Task};
 use embedded_time::Clock;
 use nalgebra::{Quaternion, Vector3};
 use num_traits::NumCast;
@@ -70,13 +70,13 @@ where
     E: ESC,
     E::Output: NumCast,
 {
-    Task::high_priority(|state: State<'_, MultiCopterState<E, N>>| {
-        let motor_output = state
-            .system
+    Task::high_priority(|event: Event<'_, MultiCopterState<E, N>>| {
+        let motor_output = event
+            .state
             .attitude_controller
-            .motor_output(state.system.gyro, state.now.0);
+            .motor_output(event.state.gyro, event.now.0);
 
-        state.system.motor_matrix.output(motor_output);
+        event.state.motor_matrix.output(motor_output);
 
         Ok(())
     })
