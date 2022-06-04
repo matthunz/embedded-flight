@@ -10,6 +10,7 @@ repository = "https://github.com/matthunz/embedded-flight"
 members = [
     "core",
     "control",
+    "copter",
     "motors",
     "scheduler"
 ]
