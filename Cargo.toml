@@ -16,7 +16,7 @@ members = [
 
 [dependencies]
 embedded-flight-core = "0.1.1"
-embedded-flight-control = "0.2.1"
+embedded-flight-control = { path = "./control" }
 embedded-flight-motors = "0.1.2"
 embedded-flight-scheduler = "0.1.1"
 embedded-time = "0.12.1"
