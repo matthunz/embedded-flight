@@ -1,18 +1,45 @@
-#[derive(Clone, Copy, Debug, Default)]
-pub struct P {
-    kp: f32,
+use nalgebra::Vector3;
+
+// TODO thrust factor
+pub struct Motor {
+    pub factor: Vector3<f32>,
 }
 
-impl P {
-    pub fn control(self, target: f32, actual: f32) -> f32 {
-        let error = target - actual;
-        error * self.kp
+impl Motor {
+    pub fn new(factor: Vector3<f32>) -> Self {
+        Self { factor }
+    }
+
+    pub fn from_angle(angle: f32, yaw_factor: f32) -> Self {
+        Self::from_degrees(angle, angle, yaw_factor)
+    }
+
+    pub fn from_degrees(
+        roll_factor_degrees: f32,
+        pitch_factor_degrees: f32,
+        yaw_factor: f32,
+    ) -> Self {
+        Self::new(Vector3::new(
+            (roll_factor_degrees + 90.).to_radians().cos(),
+            pitch_factor_degrees.to_radians().cos(),
+            yaw_factor,
+        ))
+    }
+
+    pub fn output(&self, moment: Vector3<f32>, thrust: f32) -> f32 {
+        self.factor
+            .zip_fold(&moment, 0., |acc, factor, moment| factor * moment + acc)
+            + thrust
     }
 }
 
-pub fn thrust_control(p: P, mass: f32, gravity: f32, z_target: f32, z_actual: f32) -> f32 {
-    let acceleration = p.control(z_target, z_actual);
-    mass * (gravity - acceleration)
+pub fn quad_motors() -> [Motor; 4] {
+    [
+        Motor::from_angle(90., 1.),
+        Motor::from_angle(-90., 1.),
+        Motor::from_angle(0., -1.),
+        Motor::from_angle(180., -1.),
+    ]
 }
 
 #[cfg(test)]
