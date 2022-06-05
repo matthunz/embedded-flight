@@ -8,7 +8,6 @@ pub struct QuadMotor {
     pub m: f32,
     pub k_m: f32,
     pub k_f: f32,
-    pub moment_of_inertia: Vector3<f32>,
     /// Perpendicular distance to axes (in meters)
     pub l: f32,
 }
@@ -21,29 +20,42 @@ impl QuadMotor {
             k_m: 1.,
             m,
             l: length / (2. * SQRT_2),
-            moment_of_inertia: Vector3::new(0.1, 0.1, 0.2),
         }
     }
 
-    /// Calculate the thrust on each propeller (in N) needed to command an angular acceleration (in m/s^2) and thrust acceleration (in m/s^2).
+    /// Calculate the thrust on each propeller (in N)
+    /// needed to command an angular acceleration (in m/s^2)
+    /// and thrust acceleration (in m/s^2)
+    /// with the moment of inertia (kgm^2).
     pub fn thrust_from_acceleration(
         &self,
         acceleration: Vector3<f32>,
         thrust_acceleration: f32,
+        moment_of_inertia: &Vector3<f32>,
     ) -> [f32; 4] {
-        let angular_velocity =
-            self.angular_velocity_from_acceleration(acceleration, thrust_acceleration);
+        let angular_velocity = self.angular_velocity_from_acceleration(
+            acceleration,
+            thrust_acceleration,
+            moment_of_inertia,
+        );
         self.thrust_from_angular_velocity(angular_velocity)
     }
 
-    /// Calculate the angular velocity on each propeller (in m/s) needed to command a torque (in Nm) and thrust acceleration (in m/s^2).
+    /// Calculate the angular velocity on each propeller (in m/s)
+    /// needed to command a torque (in Nm)and thrust acceleration (in m/s^2)
+    /// with the moment of inertia (kgm^2).
     pub fn angular_velocity(
         &self,
         torque: Vector3<f32>,
         thrust_acceleration: f32,
+        moment_of_inertia: &Vector3<f32>,
     ) -> [f32; 4] {
-        let acceleration = torque.zip_map(&self.moment_of_inertia, |t, moi| acceleration(t, moi));
-        self.angular_velocity_from_acceleration(acceleration, thrust_acceleration)
+        let acceleration = torque.zip_map(moment_of_inertia, |t, moi| acceleration(t, moi));
+        self.angular_velocity_from_acceleration(
+            acceleration,
+            thrust_acceleration,
+            moment_of_inertia,
+        )
     }
 
     /// Calculate the angular velocity on each propeller (in m/s) needed to command an angular acceleration (in m/s^2) and thrust acceleration (in m/s^2).
@@ -64,12 +76,13 @@ impl QuadMotor {
         &self,
         acceleration: Vector3<f32>,
         thrust_acceleration: f32,
+        moment_of_inertia: &Vector3<f32>,
     ) -> [f32; 4] {
         // Torque (Nm)
         let c_bar = -thrust_acceleration * self.m / self.k_f;
-        let p_bar = acceleration.x * self.moment_of_inertia.x / (self.k_f * self.l);
-        let q_bar = acceleration.y * self.moment_of_inertia.y / (self.k_f * self.l);
-        let r_bar = acceleration.z * self.moment_of_inertia.z / self.k_m;
+        let p_bar = acceleration.x * moment_of_inertia.x / (self.k_f * self.l);
+        let q_bar = acceleration.y * moment_of_inertia.y / (self.k_f * self.l);
+        let r_bar = acceleration.z * moment_of_inertia.z / self.k_m;
 
         let omega_4 = (c_bar + p_bar - r_bar - q_bar) / 4.;
         let omega_3 = (r_bar - p_bar) / 2. + omega_4;
@@ -94,9 +107,13 @@ fn acceleration(net_torque: f32, moment_of_inertia: f32) -> f32 {
 }
 
 impl Motors<4> for QuadMotor {
-    fn thrust(&self, torque: Vector3<f32>, acceleration: f32) -> [f32; 4] {
-        let angular_velocity =
-            self.angular_velocity(torque, acceleration);
+    fn thrust(
+        &self,
+        torque: Vector3<f32>,
+        acceleration: f32,
+        moment_of_inertia: &Vector3<f32>,
+    ) -> [f32; 4] {
+        let angular_velocity = self.angular_velocity(torque, acceleration, moment_of_inertia);
         self.thrust_from_angular_velocity(angular_velocity)
     }
 }

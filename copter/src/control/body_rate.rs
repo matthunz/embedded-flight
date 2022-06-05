@@ -1,16 +1,14 @@
 use nalgebra::Vector3;
 
 pub struct BodyRateController {
-    body_rate_k_p: Vector3<f32>,
-    moi: Vector3<f32>,
+    k_p: Vector3<f32>,
     max_torque: f32,
 }
 
 impl Default for BodyRateController {
     fn default() -> Self {
         Self {
-            body_rate_k_p: Vector3::new(20., 20., 5.),
-            moi: Vector3::new(0.005, 0.005, 0.01),
+            k_p: Vector3::new(20., 20., 5.),
             max_torque: 1.,
         }
     }
@@ -22,10 +20,11 @@ impl BodyRateController {
         &self,
         body_rate_cmd: Vector3<f32>,
         body_rate: Vector3<f32>,
+        moi: Vector3<f32>,
     ) -> Vector3<f32> {
         let taus = mul_array(
-            self.moi,
-            mul_array(self.body_rate_k_p, body_rate_cmd - body_rate),
+           moi,
+            mul_array(self.k_p, body_rate_cmd - body_rate),
         );
         let taus_mod = taus.norm();
 
