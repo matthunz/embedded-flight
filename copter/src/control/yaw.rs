@@ -1,25 +1,22 @@
 use core::f32::consts::PI;
 
-pub struct YawController {
-    yaw_k_p: f32,
-}
+use pid_controller::{error, P};
 
-impl Default for YawController {
-    fn default() -> Self {
-        Self { yaw_k_p: 4.5 }
-    }
+#[derive(Clone, Copy, Debug, Default)]
+pub struct YawController {
+    p: P,
 }
 
 impl YawController {
     /// Calculate the target yaw-rate in radians/second.
     pub fn yaw_control(&self, yaw_cmd: f32, yaw: f32) -> f32 {
-        let mut yaw_error = yaw_cmd - yaw;
+        let mut yaw_error = error(yaw_cmd, yaw);
         if yaw_error > PI {
             yaw_error = yaw_error - 2. * PI;
         } else if yaw_error < -PI {
             yaw_error = yaw_error + 2. * PI;
         };
 
-        self.yaw_k_p * yaw_error
+        self.p.control_with_error(yaw_error)
     }
 }

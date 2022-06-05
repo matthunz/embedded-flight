@@ -42,7 +42,7 @@ impl QuadMotor {
     }
 
     /// Calculate the angular velocity on each propeller (in m/s)
-    /// needed to command a torque (in Nm)and thrust acceleration (in m/s^2)
+    /// needed to command a torque (in Nm) and thrust acceleration (in m/s^2)
     /// with the moment of inertia (kgm^2).
     pub fn angular_velocity(
         &self,

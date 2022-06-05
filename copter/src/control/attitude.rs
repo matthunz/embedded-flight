@@ -1,24 +1,18 @@
-use nalgebra::{Vector3, Rotation3, Vector2, Matrix2};
+use nalgebra::{Matrix2, Rotation3, Vector2, Vector3};
+use pid_controller::P;
 
 pub struct AttitudeController {
-    gravity: f32,
     drone_mass_kg: f32,
-    altitude_k_p: f32,
-    altitude_k_d: f32,
-    roll_pitch_k_p_roll: f32,
-    roll_pitch_k_p_pitch: f32,
+    roll: P,
+    pitch: P,
 }
 
 impl Default for AttitudeController {
     fn default() -> Self {
- 
         Self {
-            gravity: 9.81,
             drone_mass_kg: 0.5,
-            altitude_k_p: 1.,
-            altitude_k_d: 1.,
-            roll_pitch_k_p_roll: 7.,
-            roll_pitch_k_p_pitch: 7.,
+            roll: P::default(),
+            pitch: P::default(),
         }
     }
 }
@@ -42,12 +36,10 @@ impl AttitudeController {
             let rot_mat = Rotation3::from_euler_angles(attitude[0], attitude[1], attitude[2]);
 
             let b_x = rot_mat[(0, 2)];
-            let b_x_err = b_x_c - b_x;
-            let b_x_p_term = self.roll_pitch_k_p_roll * b_x_err;
+            let b_x_p_term = self.roll.control(b_x_c, b_x);
 
             let b_y = rot_mat[(1, 2)];
-            let b_y_err = b_y_c - b_y;
-            let b_y_p_term = self.roll_pitch_k_p_pitch * b_y_err;
+            let b_y_p_term = self.pitch.control(b_y_c, b_y);
 
             let b_x_commanded_dot = b_x_p_term;
             let b_y_commanded_dot = b_y_p_term;
