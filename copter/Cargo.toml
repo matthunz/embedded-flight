@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 nalgebra = "0.31.0"
+pid-controller = { git = "https://github.com/matthunz/pid-controller" }
 
 [dev-dependencies]
 approx = "0.5.1"
