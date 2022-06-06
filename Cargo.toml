@@ -6,23 +6,16 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/matthunz/embedded-flight"
 
-[workspace]
-members = [
-    "core",
-    "control",
-    "copter",
-    "motors",
-    "scheduler"
-]
-
 [dependencies]
-embedded-flight-core = "0.1.1"
-embedded-flight-control = { path = "./control" }
-embedded-flight-motors = "0.1.2"
-embedded-flight-scheduler = "0.1.1"
+embedded-hal = "0.2.7"
 embedded-time = "0.12.1"
-nalgebra = { version = "0.31.0", default-features = false }
+nalgebra = "0.31.0"
+pid-controller = { git = "https://github.com/matthunz/pid-controller" }
 
 [dependencies.num-traits]
 version= "0.2.15"
 default-features = false
+features = ["libm"]
+
+[dev-dependencies]
+approx = "0.5.1"

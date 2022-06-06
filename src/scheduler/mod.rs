@@ -24,8 +24,6 @@
 //!    scheduler.run(&mut ())?;
 //! }
 //! ```
-#![no_std]
-#![deny(missing_docs)]
 
 use embedded_time::{duration::Microseconds, Clock};
 use num_traits::ToPrimitive;

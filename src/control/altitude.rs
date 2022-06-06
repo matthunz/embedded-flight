@@ -1,4 +1,4 @@
-use nalgebra::{Vector3, Rotation3};
+use nalgebra::{Rotation3, Vector3};
 use pid_controller::PD;
 
 pub struct AltitudeController {

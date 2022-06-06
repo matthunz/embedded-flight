@@ -12,7 +12,7 @@ pub struct QuadMotorControl<E> {
     pub k_f: f32,
     /// Perpendicular distance to axes (in meters)
     pub l: f32,
-    pub motors: [E; 4]
+    pub motors: [E; 4],
 }
 
 impl<E: ESC<f32>> QuadMotorControl<E> {
@@ -23,7 +23,7 @@ impl<E: ESC<f32>> QuadMotorControl<E> {
             k_m: 1.,
             m,
             l: length / (2. * SQRT_2),
-            motors
+            motors,
         }
     }
 

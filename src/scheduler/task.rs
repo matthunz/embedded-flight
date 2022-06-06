@@ -1,4 +1,4 @@
-use crate::Error;
+use super::Error;
 use embedded_time::duration::Microseconds;
 
 /// An event containing the current time, available time, and state for a task.

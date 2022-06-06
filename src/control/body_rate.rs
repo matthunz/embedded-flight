@@ -22,10 +22,7 @@ impl BodyRateController {
         body_rate: Vector3<f32>,
         moi: Vector3<f32>,
     ) -> Vector3<f32> {
-        let taus = mul_array(
-           moi,
-            mul_array(self.k_p, body_rate_cmd - body_rate),
-        );
+        let taus = mul_array(moi, mul_array(self.k_p, body_rate_cmd - body_rate));
         let taus_mod = taus.norm();
 
         if taus_mod > self.max_torque {
