@@ -2,19 +2,21 @@
 //! A `#![no_std]` flight software library for embedded rust
 //!
 //! # Generic components
-//! [`Scheduler`] real-time scheduler to run tasks at desired frequencies.
+//! [`scheduler`] contains the real-time scheduler to run tasks at desired frequencies.
 //!
 //! [`hal`] contains the hardware abstraction layer.
 //!
-//!
-//!
 //! # Multi-copter components
-//! [`Copter`] a high level position controller for a multi-copter
+//! [`Copter`] is a high level position controller for a multi-copter
 //! (see [`QuadCopter`] for a quad-motor implementation)
 //!
 //! [`control`](copter::control) contains the low level flight controllers.
 //!
-//! [`motor`](copter::control::motor) contains the low level motor control.
+//! [`MotorControl`](copter::control::MotorControl) is a trait for the low level motor control.
+//! (see [`QuadMotorController`](copter::control::QuadMotorController) for a quad-motor implementation)
+
+#![no_std]
+
 pub mod copter;
 pub use copter::{Copter, QuadCopter};
 

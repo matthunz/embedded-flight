@@ -1,7 +1,9 @@
 mod rcesc;
 pub use rcesc::{Builder, RCESC};
 
+/// Electronic speed controller
 pub trait ESC<T> {
+    /// Arm this ESC.
     fn arm(&mut self);
 
     /// Output linear actuated motion between -1 and 1

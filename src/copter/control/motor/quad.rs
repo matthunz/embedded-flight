@@ -1,7 +1,7 @@
 use super::MotorControl;
 use crate::ESC;
+use core::f32::consts::SQRT_2;
 use nalgebra::Vector3;
-use std::f32::consts::SQRT_2;
 
 /// Motor control for a quad-copter.
 pub struct QuadMotorController<E> {

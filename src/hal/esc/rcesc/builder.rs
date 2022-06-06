@@ -1,6 +1,5 @@
-use embedded_hal::PwmPin;
-
 use super::RCESC;
+use embedded_hal::PwmPin;
 
 pub struct Builder<T> {
     arm: T,

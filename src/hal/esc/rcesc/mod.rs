@@ -7,7 +7,7 @@ use num_traits::{Float, Num, NumCast, ToPrimitive};
 
 use super::ESC;
 
-// TODO scale final pwm output
+/// An ESC implementation for RCESC motor controllers.
 pub struct RCESC<T: PwmPin> {
     arm: T::Duty,
     min: T::Duty,
