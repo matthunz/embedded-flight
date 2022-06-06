@@ -10,9 +10,13 @@ pub use body_rate::BodyRateController;
 mod lateral_pos;
 pub use lateral_pos::LateralPositionController;
 
+mod motor;
+pub use motor::{MotorControl, QuadMotorControl};
+
 mod yaw;
-use nalgebra::{Vector2, Vector3};
 pub use yaw::YawController;
+
+use nalgebra::{Vector2, Vector3};
 
 pub struct Controller {
     pub altitude: AltitudeController,

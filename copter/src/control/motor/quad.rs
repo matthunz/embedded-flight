@@ -2,24 +2,28 @@ use std::f32::consts::SQRT_2;
 
 use nalgebra::Vector3;
 
-use super::Motors;
+use crate::esc::ESC;
 
-pub struct QuadMotor {
+use super::MotorControl;
+
+pub struct QuadMotorControl<E> {
     pub m: f32,
     pub k_m: f32,
     pub k_f: f32,
     /// Perpendicular distance to axes (in meters)
     pub l: f32,
+    pub motors: [E; 4]
 }
 
-impl QuadMotor {
+impl<E: ESC<f32>> QuadMotorControl<E> {
     // Create a new `QuadMotor` from the quad's mass (in grams) and rotor to rotor length (in meters).
-    pub fn new(m: f32, length: f32) -> Self {
+    pub fn new(m: f32, length: f32, motors: [E; 4]) -> Self {
         Self {
             k_f: 1.,
             k_m: 1.,
             m,
             l: length / (2. * SQRT_2),
+            motors
         }
     }
 
@@ -100,20 +104,28 @@ impl QuadMotor {
     pub fn thrust_from_angular_velocity(&self, angular_velocity: [f32; 4]) -> [f32; 4] {
         angular_velocity.map(|v| self.k_f * v.powi(2))
     }
+
+    pub fn output_thrust(&mut self, thrust: [f32; 4]) {
+        for (esc, thrust) in self.motors.iter_mut().zip(thrust) {
+            esc.output(thrust);
+        }
+    }
 }
 
 fn acceleration(net_torque: f32, moment_of_inertia: f32) -> f32 {
     net_torque / moment_of_inertia
 }
 
-impl Motors<4> for QuadMotor {
-    fn thrust(
-        &self,
+impl<E: ESC<f32>> MotorControl for QuadMotorControl<E> {
+    fn motor_control(
+        &mut self,
         torque: Vector3<f32>,
         acceleration: f32,
         moment_of_inertia: &Vector3<f32>,
-    ) -> [f32; 4] {
+    ) {
         let angular_velocity = self.angular_velocity(torque, acceleration, moment_of_inertia);
-        self.thrust_from_angular_velocity(angular_velocity)
+        let thrust = self.thrust_from_angular_velocity(angular_velocity);
+
+        self.output_thrust(thrust);
     }
 }

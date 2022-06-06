@@ -4,7 +4,7 @@ use core::ops::Neg;
 pub use builder::Builder;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::PwmPin;
-use num_traits::{Float, Num, One};
+use num_traits::{Float, Num, NumCast, One, ToPrimitive};
 
 use super::ESC;
 
@@ -42,22 +42,29 @@ where
         self.pin.set_duty(self.min);
         delay.delay_ms(2000);
 
-        self.arm();
+        self.arm_inner();
+    }
+
+    fn arm_inner(&mut self) {
+        self.pin.set_duty(self.arm)
     }
 }
 
-impl<T> ESC for RCESC<T>
+impl<T, U> ESC<U> for RCESC<T>
 where
     T: PwmPin,
-    T::Duty: Num + Copy,
+    T::Duty: Num + NumCast + ToPrimitive + Copy,
+    U: Float + NumCast,
 {
-    type Output = T::Duty;
-
     fn arm(&mut self) {
-        self.output(self.arm)
+        self.arm_inner()
     }
 
-    fn output(&mut self, output: Self::Output) {
-        self.pin.set_duty(output);
+    fn output(&mut self, output: U) {
+        let min = U::from(self.min).unwrap();
+        let max = U::from(self.max).unwrap();
+
+        let duty: U = (output + U::one()) * (max - min) / (U::one() + U::one()) + min;
+        self.pin.set_duty(<T::Duty as NumCast>::from(duty).unwrap());
     }
 }
