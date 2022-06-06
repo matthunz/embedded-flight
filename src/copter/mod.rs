@@ -1,10 +1,10 @@
 pub mod control;
-pub use control::{Controller, MotorControl, QuadMotorControl};
+pub use control::{Controller, MotorControl, QuadMotorController};
 
 use crate::Sensors;
 use nalgebra::Vector3;
 
-pub type QuadCopter<S, E> = Copter<S, QuadMotorControl<E>>;
+pub type QuadCopter<S, E> = Copter<S, QuadMotorController<E>>;
 
 #[derive(Clone, Debug, Default)]
 pub struct Copter<S, M: MotorControl> {

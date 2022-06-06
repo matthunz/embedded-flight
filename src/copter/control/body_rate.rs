@@ -1,6 +1,5 @@
 use nalgebra::Vector3;
 
-
 #[derive(Clone, Debug)]
 pub struct BodyRateController {
     k_p: Vector3<f32>,

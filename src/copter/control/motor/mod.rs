@@ -1,7 +1,7 @@
 use nalgebra::Vector3;
 
 mod quad;
-pub use quad::QuadMotorControl;
+pub use quad::QuadMotorController;
 
 pub trait MotorControl {
     fn arm(&mut self);
