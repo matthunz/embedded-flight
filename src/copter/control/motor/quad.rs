@@ -9,18 +9,22 @@ pub struct QuadMotorControl<E> {
     pub k_f: f32,
     /// Perpendicular distance to axes (in meters)
     pub l: f32,
+    pub min_thrust: f32,
+    pub max_thrust: f32,
     pub motors: [E; 4],
 }
 
 impl<E: ESC<f32>> QuadMotorControl<E> {
     // Create a new `QuadMotor` from the quad's mass (in grams) and rotor to rotor length (in meters).
-    pub fn new(m: f32, length: f32, motors: [E; 4]) -> Self {
+    pub fn new(m: f32, length: f32, max_thrust: f32, min_thrust: f32, motors: [E; 4]) -> Self {
         Self {
             k_f: 1.,
             k_m: 1.,
             m,
             l: length / (2. * SQRT_2),
             motors,
+            min_thrust,
+            max_thrust,
         }
     }
 
@@ -91,6 +95,8 @@ impl<E: ESC<f32>> QuadMotorControl<E> {
 
     pub fn output_thrust(&mut self, thrust: [f32; 4]) {
         for (esc, thrust) in self.motors.iter_mut().zip(thrust) {
+            let actuation =
+                (thrust - self.min_thrust) * 2. / (self.max_thrust - self.min_thrust) + 1.;
             esc.output(thrust);
         }
     }
