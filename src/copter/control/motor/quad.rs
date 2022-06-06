@@ -1,9 +1,6 @@
 use std::f32::consts::SQRT_2;
-
 use nalgebra::Vector3;
-
-use crate::esc::ESC;
-
+use crate::ESC;
 use super::MotorControl;
 
 pub struct QuadMotorControl<E> {

@@ -1,5 +1,6 @@
-mod quad;
 use nalgebra::Vector3;
+
+mod quad;
 pub use quad::QuadMotorControl;
 
 pub trait MotorControl {
