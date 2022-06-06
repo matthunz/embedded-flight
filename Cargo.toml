@@ -1,6 +1,6 @@
 [package]
 name = "embedded-flight"
-version = "0.3.0"
+version = "0.3.1"
 description = "Embedded flight library"
 edition = "2021"
 license = "MIT"
