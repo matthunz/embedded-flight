@@ -63,7 +63,7 @@ impl Controller {
         moment_of_inertia: Vector3<f32>,
         acceleration_ff: Vector2<f32>,
     ) -> (Vector3<f32>, f32) {
-        let acceleration_cmd = self.lateral_position.lateral_position_control(
+        let acceleration_cmd = self.lateral_position.lateral_position_control_with_feed_forward(
             Vector2::new(local_position_cmd[0], local_position_cmd[1]),
             Vector2::new(local_velocity_cmd[0], local_velocity_cmd[1]),
             Vector2::new(local_position[0], local_position[1]),

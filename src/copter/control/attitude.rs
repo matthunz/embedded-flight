@@ -4,8 +4,8 @@ use pid_controller::P;
 #[derive(Clone, Debug)]
 pub struct AttitudeController {
     drone_mass_kg: f32,
-    roll: P,
-    pitch: P,
+    roll: P<f32>,
+    pitch: P<f32>,
 }
 
 impl Default for AttitudeController {

@@ -1,18 +1,18 @@
 use nalgebra::Vector2;
-
-
+use pid_controller::PD;
 
 #[derive(Clone, Debug)]
 pub struct LateralPositionController {
-    lateral_k_p: f32,
-    lateral_k_d: f32,
+    pd: PD<f32>,
 }
 
 impl Default for LateralPositionController {
     fn default() -> Self {
         Self {
-            lateral_k_p: 1.,
-            lateral_k_d: 1.,
+            pd: PD {
+                p: Default::default(),
+                kd: 1.,
+            },
         }
     }
 }
@@ -24,11 +24,28 @@ impl LateralPositionController {
         local_velocity_cmd: Vector2<f32>,
         local_position: Vector2<f32>,
         local_velocity: Vector2<f32>,
+    ) -> Vector2<f32> {
+        self.pd.control(
+            local_position_cmd,
+            local_velocity_cmd,
+            local_position,
+            local_velocity,
+        )
+    }
+
+    pub fn lateral_position_control_with_feed_forward(
+        &self,
+        local_position_cmd: Vector2<f32>,
+        local_velocity_cmd: Vector2<f32>,
+        local_position: Vector2<f32>,
+        local_velocity: Vector2<f32>,
         acceleration_ff: Vector2<f32>,
     ) -> Vector2<f32> {
-        let err_p = local_position_cmd - local_position;
-        let err_dot = local_velocity_cmd - local_velocity;
-
-        self.lateral_k_p * err_p + self.lateral_k_d * err_dot + acceleration_ff
+        self.lateral_position_control(
+            local_position_cmd,
+            local_velocity_cmd,
+            local_position,
+            local_velocity,
+        ) + acceleration_ff
     }
 }

@@ -4,7 +4,7 @@ use pid_controller::{error, P};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct YawController {
-    p: P,
+    p: P<f32>,
 }
 
 impl YawController {

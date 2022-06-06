@@ -3,7 +3,7 @@ use pid_controller::PD;
 
 #[derive(Clone, Debug)]
 pub struct AltitudeController {
-    pub pd: PD,
+    pub pd: PD<f32>,
     pub gravity: f32,
 }
 
