@@ -1,6 +1,6 @@
 [package]
 name = "embedded-flight"
-version = "0.2.1"
+version = "0.3.0"
 description = "Embedded flight library"
 edition = "2021"
 license = "MIT"
@@ -10,7 +10,7 @@ repository = "https://github.com/matthunz/embedded-flight"
 embedded-hal = "0.2.7"
 embedded-time = "0.12.1"
 nalgebra = "0.31.0"
-pid-controller = { git = "https://github.com/matthunz/pid-controller" }
+pid-controller = "0.1.0"
 
 [dependencies.num-traits]
 version= "0.2.15"
