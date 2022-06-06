@@ -1,9 +1,22 @@
 use nalgebra::{Rotation3, Vector3};
 use pid_controller::PD;
 
+#[derive(Clone, Debug)]
 pub struct AltitudeController {
     pub pd: PD,
     pub gravity: f32,
+}
+
+impl Default for AltitudeController {
+    fn default() -> Self {
+        Self {
+            pd: PD {
+                p: Default::default(),
+                kd: 1.,
+            },
+            gravity: 9.81,
+        }
+    }
 }
 
 impl AltitudeController {

@@ -1,6 +1,7 @@
 use nalgebra::{Matrix2, Rotation3, Vector2, Vector3};
 use pid_controller::P;
 
+#[derive(Clone, Debug)]
 pub struct AttitudeController {
     drone_mass_kg: f32,
     roll: P,

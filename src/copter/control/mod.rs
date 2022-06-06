@@ -18,6 +18,7 @@ pub use yaw::YawController;
 
 use nalgebra::{Vector2, Vector3};
 
+#[derive(Clone, Debug, Default)]
 pub struct Controller {
     pub altitude: AltitudeController,
     pub attitude: AttitudeController,

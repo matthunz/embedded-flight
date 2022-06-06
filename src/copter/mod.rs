@@ -6,10 +6,18 @@ use nalgebra::Vector3;
 
 pub type QuadCopter<S, E> = Copter<S, QuadMotorControl<E>>;
 
+#[derive(Clone, Debug, Default)]
 pub struct Copter<S, M: MotorControl> {
-    pub controller: Controller,
-    pub motor_control: M,
+    /// The copter's moment of inertia (in kg*m^2)
     pub moment_of_inertia: Vector3<f32>,
+
+    /// The position controller
+    pub controller: Controller,
+
+    /// The motor control to output commands.
+    pub motor_control: M,
+
+    /// The sensor measurement source.
     pub sensors: S,
 }
 
@@ -23,7 +31,8 @@ where
         self.motor_control.arm();
     }
 
-    /// Control the copter to move to a local position with a desired velocity.
+    /// Control the copter to move to a position in the local frame [north, east] (in m)
+    /// with a desired velocity in the local frame [north_velocity, east_velocity] (in m/s).
     pub fn control(&mut self, position: Vector3<f32>, velocity: Vector3<f32>) {
         let (torque, acceleration) = self.controller.position_control(
             position,

@@ -1,5 +1,8 @@
 use nalgebra::Vector2;
 
+
+
+#[derive(Clone, Debug)]
 pub struct LateralPositionController {
     lateral_k_p: f32,
     lateral_k_d: f32,
