@@ -18,10 +18,16 @@ where
     S: Sensors,
     M: MotorControl,
 {
-    pub fn control(&mut self, local_position_cmd: Vector3<f32>, local_velocity_cmd: Vector3<f32>) {
+    /// Arm the copter's motors.
+    pub fn arm(&mut self) {
+        self.motor_control.arm();
+    }
+
+    /// Control the copter to move to a local position with a desired velocity.
+    pub fn control(&mut self, position: Vector3<f32>, velocity: Vector3<f32>) {
         let (torque, acceleration) = self.controller.position_control(
-            local_position_cmd,
-            local_velocity_cmd,
+            position,
+            velocity,
             self.sensors.position(),
             self.sensors.velocity(),
             self.sensors.attitude(),

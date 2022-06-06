@@ -1,6 +1,4 @@
-//! # embedded-flight-scheduler
-//!
-//! Embedded flight real time scheduler library
+//! Real time task scheduler
 //!
 //! For more check out the [scheduler](https://github.com/matthunz/embedded-flight/tree/main/examples/scheduler) example on GitHub.
 //! ```ignore

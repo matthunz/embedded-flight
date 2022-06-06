@@ -1,10 +1,9 @@
 mod builder;
-use core::ops::Neg;
 
 pub use builder::Builder;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::PwmPin;
-use num_traits::{Float, Num, NumCast, One, ToPrimitive};
+use num_traits::{Float, Num, NumCast, ToPrimitive};
 
 use super::ESC;
 

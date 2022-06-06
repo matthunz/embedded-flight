@@ -1,7 +1,7 @@
-use std::f32::consts::SQRT_2;
-use nalgebra::Vector3;
-use crate::ESC;
 use super::MotorControl;
+use crate::ESC;
+use nalgebra::Vector3;
+use std::f32::consts::SQRT_2;
 
 pub struct QuadMotorControl<E> {
     pub m: f32,
@@ -60,19 +60,6 @@ impl<E: ESC<f32>> QuadMotorControl<E> {
     }
 
     /// Calculate the angular velocity on each propeller (in m/s) needed to command an angular acceleration (in m/s^2) and thrust acceleration (in m/s^2).
-    /// ```
-    /// use embedded_flight_copter::motor::Quad;
-    /// use nalgebra::Vector3;
-    /// use approx::abs_diff_eq;
-    ///
-    /// let quad = Quad::new(0.5, 0.566);
-    /// let props = quad.propeller_angular_velocities(Vector3::new(1.0, -2.0, 0.3), -5.0);
-    ///
-    /// abs_diff_eq!(props[0], -0.71768341);
-    /// abs_diff_eq!(props[1],  0.48498291);
-    /// abs_diff_eq!(props[2], -0.87460307);
-    /// abs_diff_eq!(props[3], -0.99236666);
-    /// ```
     pub fn angular_velocity_from_acceleration(
         &self,
         acceleration: Vector3<f32>,
@@ -114,6 +101,12 @@ fn acceleration(net_torque: f32, moment_of_inertia: f32) -> f32 {
 }
 
 impl<E: ESC<f32>> MotorControl for QuadMotorControl<E> {
+    fn arm(&mut self) {
+        for motor in &mut self.motors {
+            motor.arm();
+        }
+    }
+
     fn motor_control(
         &mut self,
         torque: Vector3<f32>,

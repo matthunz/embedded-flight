@@ -4,7 +4,9 @@ mod quad;
 pub use quad::QuadMotorControl;
 
 pub trait MotorControl {
-    /// Calculate the thrust on each propeller (in N) needed to command a torque (in Nm) and thrust acceleration (in m/s^2).
+    fn arm(&mut self);
+
+    /// Output the control needed to command a torque (in Nm) and thrust acceleration (in m/s^2).
     fn motor_control(
         &mut self,
         torque: Vector3<f32>,
