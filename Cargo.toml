@@ -19,3 +19,4 @@ features = ["libm"]
 
 [dev-dependencies]
 approx = "0.5.1"
+std-embedded-time = "0.1.0"
