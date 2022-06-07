@@ -24,6 +24,7 @@ pub mod hal;
 pub use hal::{Sensors, ESC};
 
 pub mod plane;
+pub use plane::Plane;
 
 pub mod scheduler;
 pub use scheduler::Scheduler;
