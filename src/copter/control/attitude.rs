@@ -27,6 +27,7 @@ impl AttitudeController {
         thrust_cmd: f32,
     ) -> Vector2<f32> {
         if thrust_cmd > 0. {
+            // Calculate the collective acceleration.
             let c = -thrust_cmd / self.drone_mass_kg;
 
             let (b_x_c, b_y_c) = {
@@ -34,16 +35,14 @@ impl AttitudeController {
                 (b_c[0], b_c[1])
             };
 
+            // Calculate the rotation matrix of the current attitude.
             let rot_mat = Rotation3::from_euler_angles(attitude[0], attitude[1], attitude[2]);
 
             let b_x = rot_mat[(0, 2)];
-            let b_x_p_term = self.roll.control(b_x_c, b_x);
+            let b_x_cmd_dot = self.roll.control(b_x_c, b_x);
 
             let b_y = rot_mat[(1, 2)];
-            let b_y_p_term = self.pitch.control(b_y_c, b_y);
-
-            let b_x_commanded_dot = b_x_p_term;
-            let b_y_commanded_dot = b_y_p_term;
+            let b_y_cmd_dot = self.pitch.control(b_y_c, b_y);
 
             let rot_mat1 = Matrix2::new(
                 rot_mat[(1, 0)],
@@ -52,10 +51,7 @@ impl AttitudeController {
                 -rot_mat[(0, 1)],
             ) / rot_mat[(2, 2)];
 
-            let rot_rate = rot_mat1 * Vector2::new(b_x_commanded_dot, b_y_commanded_dot);
-            let p_c = rot_rate[0];
-            let q_c = rot_rate[1];
-            Vector2::new(p_c, q_c)
+            rot_mat1 * Vector2::new(b_x_cmd_dot, b_y_cmd_dot)
         } else {
             Vector2::zeros()
         }
