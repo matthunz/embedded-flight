@@ -23,5 +23,7 @@ pub use copter::{Copter, QuadCopter};
 pub mod hal;
 pub use hal::{Sensors, ESC};
 
+pub mod plane;
+
 pub mod scheduler;
 pub use scheduler::Scheduler;
