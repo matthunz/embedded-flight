@@ -1,6 +1,6 @@
-use nalgebra::Vector3;
-use crate::ESC;
 use super::MotorControl;
+use crate::ESC;
+use nalgebra::Vector3;
 
 pub struct QuadMotorControl<E> {
     /// Perpendicular distance to axes [m].
@@ -36,4 +36,3 @@ impl<E: ESC<f32>> MotorControl for QuadMotorControl<E> {
         self.output_motor_thrust(0, (-t1 - t2 + t3 + collective_thrust) / 4.);
     }
 }
-

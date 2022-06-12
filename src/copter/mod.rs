@@ -1,3 +1,4 @@
+use crate::Sensors;
 use nalgebra::{UnitQuaternion, Vector3};
 
 pub mod control;
@@ -5,16 +6,6 @@ pub use control::Control;
 use control::{MotorControl, QuadMotorControl};
 
 pub type QuadCopter<E, S> = Copter<QuadMotorControl<E>, S>;
-
-pub trait Sensors {
-    fn attitude(&mut self) -> UnitQuaternion<f32>;
-
-    fn gyro(&mut self) -> Vector3<f32>;
-
-    fn velocity(&mut self) -> Vector3<f32>;
-
-    fn position(&mut self) -> Vector3<f32>;
-}
 
 pub struct Copter<M, S> {
     control: Control,
@@ -25,7 +16,7 @@ pub struct Copter<M, S> {
 impl<M, S> Copter<M, S>
 where
     M: MotorControl,
-    S: Sensors,
+    S: Sensors<UnitQuaternion<f32>>,
 {
     pub fn altitude_control(
         &mut self,

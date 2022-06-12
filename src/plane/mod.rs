@@ -1,15 +1,10 @@
-use crate::Sensors;
+use crate::{hal::Actuator, Sensors};
 use core::f32::consts::{FRAC_PI_2, PI};
 use nalgebra::{Vector2, Vector3};
 use pid_controller::P;
 
 pub mod control;
 use control::{LateralControl, LongitudinalControl};
-
-pub trait Output {
-    /// Output a percentage in [-1, 1].
-    fn output(&mut self, output: f32);
-}
 
 pub struct Plane<S, A, E, T> {
     pub sensors: S,
@@ -23,10 +18,10 @@ pub struct Plane<S, A, E, T> {
 
 impl<S, A, E, T> Plane<S, A, E, T>
 where
-    S: Sensors,
-    A: Output,
-    E: Output,
-    T: Output,
+    S: Sensors<Vector3<f32>>,
+    A: Actuator,
+    E: Actuator,
+    T: Actuator,
 {
     /// Output the commands needed to orbit a radius (in meters) around a center location in the NED frame (in meters).
     /// Maintains the commanded airspeed (in m/s) with time-step `dt` in seconds.
