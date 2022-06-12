@@ -19,9 +19,9 @@ pub struct Plane<S, A, E, T> {
 impl<S, A, E, T> Plane<S, A, E, T>
 where
     S: Sensors<Vector3<f32>>,
-    A: Actuator,
-    E: Actuator,
-    T: Actuator,
+    A: Actuator<f32>,
+    E: Actuator<f32>,
+    T: Actuator<f32>,
 {
     /// Output the commands needed to orbit a radius (in meters) around a center location in the NED frame (in meters).
     /// Maintains the commanded airspeed (in m/s) with time-step `dt` in seconds.
