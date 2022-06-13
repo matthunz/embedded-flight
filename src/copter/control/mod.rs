@@ -16,8 +16,11 @@ pub struct Control {
     pub kp_yaw: f32,
     pub moment_of_inertia: Vector3<f32>,
     pub kp_body_rate: f32,
+
+    // on each rotor
     pub min_thrust: f32,
     pub max_thrust: f32,
+
     pub kp_bank: f32,
     pub max_tilt_angle: f32,
 }
@@ -26,6 +29,7 @@ impl Control {
     pub fn position_control(
         &mut self,
         attitude: UnitQuaternion<f32>,
+        body_rate: Vector3<f32>,
         altitude: f32,
         ascent_rate: f32,
         altitude_cmd: f32,
@@ -48,7 +52,7 @@ impl Control {
             .max((self.min_thrust + thrust_margin) * 4.)
             .min((self.max_thrust - thrust_margin) * 4.);
 
-        let torque_cmd = self.body_rate_control(Vector3::zeros(), Vector3::zeros());
+        let torque_cmd = self.body_rate_control(body_rate, Vector3::zeros());
 
         (torque_cmd, collective_thrust_cmd)
     }

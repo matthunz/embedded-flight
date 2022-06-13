@@ -1,5 +1,5 @@
 use crate::Sensors;
-use nalgebra::{UnitQuaternion, Vector3};
+use nalgebra::{UnitQuaternion, Vector2, Vector3};
 
 pub mod control;
 pub use control::Control;
@@ -7,10 +7,13 @@ use control::{MotorControl, QuadMotorControl};
 
 pub type QuadCopter<E, S> = Copter<QuadMotorControl<E>, S>;
 
+
+
 pub struct Copter<M, S> {
     control: Control,
     motors: M,
     sensors: S,
+    home: Vector2<f32>,
 }
 
 impl<M, S> Copter<M, S>
