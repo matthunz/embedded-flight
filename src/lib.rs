@@ -48,6 +48,17 @@ pub struct Motor<E> {
     actuator: f32,
 }
 
+impl<E> Motor<E> {
+    pub fn new(esc: E) -> Self {
+        Self {
+            esc,
+            is_enabled: true,
+            thrust_rpyt_out: 0.,
+            actuator: 0.,
+        }
+    }
+}
+
 pub struct MotorMatrix<E, const N: usize> {
     motors: [Motor<E>; N],
     controller: MultiCopterMotors,
@@ -57,6 +68,13 @@ impl<E, const N: usize> MotorMatrix<E, N>
 where
     E: ESC<i16>,
 {
+    pub fn new(motors: [Motor<E>; N]) -> Self {
+        Self {
+            motors,
+            controller: MultiCopterMotors::default(),
+        }
+    }
+
     pub fn output(&mut self, dt: u32) {
         self.controller.update_throttle_filter(dt);
 
@@ -175,7 +193,46 @@ pub struct MultiCopterMotors {
     spool_state: SpoolState,
 }
 
+impl Default for MultiCopterMotors {
+    fn default() -> Self {
+        Self::new(490)
+    }
+}
+
 impl MultiCopterMotors {
+    pub fn new(speed_hz: u16) -> Self {
+        Self {
+            dt: 0.,
+            speed_hz,
+            roll_in: 0.,
+            roll_in_ff: 0.,
+            pitch_in: 0.,
+            pitch_in_ff: 0.,
+            yaw_in: 0.,
+            yaw_in_ff: 0.,
+            forward_in: 0.,
+            lateral_in: 0.,
+            throttle_avg_max: 0.,
+            throttle_filter: LowPassFilter::with_cutoff(0.),
+            throttle_in: 0.,
+            throttle_out: 0.,
+            throttle_slew: DerivativeFilter::new(),
+            throttle_slew_rate: 0.,
+            throttle_slew_filter: LowPassFilter::with_cutoff(50.),
+            slew_up_time: 0.,
+            slew_dn_time: 0.,
+            batter_voltage_filter: LowPassFilter::with_cutoff(0.5),
+            thrust_curve_exp: 0.65,
+            spin_min: 0.15,
+            spin_max: 0.95,
+            max_lift: 1.,
+            spin_up_ratio: 0.,
+            is_armed: false,
+            min_pwm: 1000,
+            max_pwm: 2000,
+            spool_state: SpoolState::GroundIdle,
+        }
+    }
     pub fn update_throttle_filter(&mut self, dt: u32) {
         let last_throttle = self.throttle_filter.output();
 
