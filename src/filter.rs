@@ -69,6 +69,10 @@ impl LowPassFilter {
         }
     }
 
+    pub fn output(&self) -> f32 {
+        self.filter.output
+    }
+
     pub fn set_cutoff_freq(&mut self, cutoff_freq: f32) {
         self.cutoff_freq = cutoff_freq;
         self.filter
@@ -91,3 +95,64 @@ impl LowPassFilter {
         self.filter.reset(value)
     }
 }
+
+pub struct DerivativeFilter<const FILTER_SIZE: usize> {
+    buffer: [f32; FILTER_SIZE],
+    timestamps: [u32; FILTER_SIZE],
+    idx: usize,
+    new_data: bool,
+    last_slope: f32,
+}
+
+impl<const FILTER_SIZE: usize> DerivativeFilter<FILTER_SIZE> {
+    pub fn new() -> Self {
+        Self {
+            buffer: [0.0; FILTER_SIZE],
+            timestamps: [0; FILTER_SIZE],
+            idx: 0,
+            new_data: false,
+            last_slope: 0.0,
+        }
+    }
+
+    pub fn update(&mut self, sample: f32, timestamp: u32) {
+        self.buffer[self.idx] = sample;
+        self.timestamps[self.idx] = timestamp;
+        self.idx = (self.idx + 1) % FILTER_SIZE;
+        self.new_data = true;
+    }
+
+    pub fn slope(&mut self) -> f32 {
+        if !self.new_data {
+            return self.last_slope;
+        }
+
+        let n = FILTER_SIZE;
+        let dt = self.timestamps[self.idx] as i32 - self.timestamps[(self.idx + n - 1) as usize % n] as i32;
+        let idx_prev = (self.idx + n - 2) as usize % n;
+        let idx_next = (self.idx + 1) as usize % n;
+
+        let y_prev = self.buffer[idx_prev];
+        let y_next = self.buffer[idx_next];
+        let dy = y_next - y_prev;
+
+        if dt == 0 {
+            self.last_slope = 0.0;
+        } else {
+            self.last_slope = dy / (dt as f32 * 1e-6);
+        }
+
+        self.new_data = false;
+        self.last_slope
+    }
+
+    pub fn reset(&mut self) {
+        self.buffer = [0.0; FILTER_SIZE];
+        self.timestamps = [0; FILTER_SIZE];
+        self.idx = 0;
+        self.new_data = false;
+        self.last_slope = 0.0;
+    }
+}
+
+
