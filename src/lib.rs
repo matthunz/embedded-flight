@@ -20,6 +20,8 @@
 pub mod copter;
 pub use copter::{Copter, QuadCopter};
 
+pub mod filter;
+
 pub mod hal;
 pub use hal::{Actuator, Sensors, ESC};
 
