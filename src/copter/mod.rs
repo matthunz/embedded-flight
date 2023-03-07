@@ -7,8 +7,6 @@ use control::{MotorControl, QuadMotorControl};
 
 pub type QuadCopter<E, S> = Copter<QuadMotorControl<E>, S>;
 
-
-
 pub struct Copter<M, S> {
     control: Control,
     motors: M,

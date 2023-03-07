@@ -32,6 +32,15 @@ pub use plane::Plane;
 pub mod scheduler;
 pub use scheduler::Scheduler;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SpoolState {
+    GroundIdle,
+    ShutDown,
+    SpoolingUp,
+    SpoolingDown,
+    ThrottleUnlimited,
+}
+
 pub struct Motor<E> {
     esc: E,
     is_enabled: bool,
@@ -44,7 +53,10 @@ pub struct MotorMatrix<E, const N: usize> {
     controller: MultiCopterMotors,
 }
 
-impl<E, const N: usize> MotorMatrix<E, N> {
+impl<E, const N: usize> MotorMatrix<E, N>
+where
+    E: ESC<i16>,
+{
     pub fn output(&mut self, dt: u32) {
         self.controller.update_throttle_filter(dt);
 
@@ -52,13 +64,42 @@ impl<E, const N: usize> MotorMatrix<E, N> {
     }
 
     pub fn output_to_motors(&mut self) {
-        // Set motor output based on thrust requests
+        match self.controller.spool_state {
+            SpoolState::ShutDown => {
+                for motor in &mut self.motors {
+                    if motor.is_enabled {
+                        motor.actuator = 0.;
+                    }
+                }
+            }
+            SpoolState::GroundIdle => {
+                // sends output to motors when armed but not flying
+                for motor in &mut self.motors {
+                    if motor.is_enabled {
+                        motor.actuator = self.controller.actuator_with_slew(
+                            motor.actuator,
+                            self.controller.actuator_spin_up_to_ground_idle(),
+                        );
+                    }
+                }
+            }
+            SpoolState::SpoolingDown | SpoolState::SpoolingUp | SpoolState::ThrottleUnlimited => {
+                // Set motor output based on thrust requests
+                for motor in &mut self.motors {
+                    if motor.is_enabled {
+                        motor.actuator = self.controller.actuator_with_slew(
+                            motor.actuator,
+                            self.controller.thrust_to_actuator(motor.thrust_rpyt_out),
+                        );
+                    }
+                }
+            }
+        };
+
         for motor in &mut self.motors {
             if motor.is_enabled {
-                motor.actuator = self.controller.actuator_with_slew(
-                    motor.actuator,
-                    self.controller.thrust_to_actuator(motor.thrust_rpyt_out),
-                );
+                let pwm = self.controller.output_to_pwm(motor.actuator);
+                motor.esc.output(pwm);
             }
         }
     }
@@ -119,8 +160,19 @@ pub struct MultiCopterMotors {
     /// Maximum lift ratio from battery voltage
     max_lift: f32,
 
+    /// throttle percentage (0 ~ 1) between zero and throttle_min
+    spin_up_ratio: f32,
+
     /// Armed state of the motors
     is_armed: bool,
+
+    /// Minimum PWM value that will ever be output to the motors (if 0, vehicle's throttle input channel's min pwm used)
+    min_pwm: i16,
+
+    /// Maximum PWM value that will ever be output to the motors (if 0, vehicle's throttle input channel's max pwm used)
+    max_pwm: i16,
+
+    spool_state: SpoolState,
 }
 
 impl MultiCopterMotors {
@@ -205,6 +257,49 @@ impl MultiCopterMotors {
         return self.spin_min
             + (self.spin_max - self.spin_min)
                 * self.apply_thrust_curve_and_volt_scaling(thrust_constrained);
+    }
+
+    // gradually increase actuator output to spin_min
+    pub fn actuator_spin_up_to_ground_idle(&self) -> f32 {
+        constrain_float(self.spin_up_ratio, 0., 1.) * self.spin_min
+    }
+
+    pub fn compensation_gain(&self) -> f32 {
+        // avoid divide by zero
+        if self.max_lift <= 0. {
+            return 1.;
+        }
+
+        1. / self.max_lift
+    }
+
+    pub fn output_armed_stabilizing(&self) {
+        // apply voltage and air pressure compensation
+        let compensation_gain = self.compensation_gain(); // compensation for battery voltage and altitude
+        let roll_thrust = (self.roll_in + self.roll_in_ff) * compensation_gain;
+        let pitch_thrust = (self.pitch_in + self.pitch_in_ff) * compensation_gain;
+        let yaw_thrust = (self.yaw_in + self.yaw_in_ff) * compensation_gain;
+        let throttle_thrust = self.throttle() * compensation_gain;
+        let throttle_avg_max = self.throttle_avg_max * compensation_gain;
+    }
+
+    pub fn throttle(&self) -> f32 {
+        constrain_float(self.throttle_filter.output(), 0., 1.)
+    }
+
+    // convert actuator output (0~1) range to pwm range
+    pub fn output_to_pwm(&self, actuator: f32) -> i16 {
+        if self.spool_state == SpoolState::ShutDown {
+            // in shutdown mode, use PWM 0 or minimum PWM
+            if self.is_armed {
+                self.min_pwm
+            } else {
+                0
+            }
+        } else {
+            // in all other spool modes, covert to desired PWM
+            ((self.min_pwm + (self.max_pwm - self.min_pwm)) as f32 * actuator) as _
+        }
     }
 }
 

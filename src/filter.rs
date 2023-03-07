@@ -128,7 +128,8 @@ impl<const FILTER_SIZE: usize> DerivativeFilter<FILTER_SIZE> {
         }
 
         let n = FILTER_SIZE;
-        let dt = self.timestamps[self.idx] as i32 - self.timestamps[(self.idx + n - 1) as usize % n] as i32;
+        let dt = self.timestamps[self.idx] as i32
+            - self.timestamps[(self.idx + n - 1) as usize % n] as i32;
         let idx_prev = (self.idx + n - 2) as usize % n;
         let idx_next = (self.idx + 1) as usize % n;
 
@@ -154,5 +155,3 @@ impl<const FILTER_SIZE: usize> DerivativeFilter<FILTER_SIZE> {
         self.last_slope = 0.0;
     }
 }
-
-
