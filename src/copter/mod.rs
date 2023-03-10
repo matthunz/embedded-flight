@@ -1,6 +1,9 @@
 use crate::Sensors;
 use nalgebra::{UnitQuaternion, Vector2, Vector3};
 
+mod attitude_controller;
+pub use attitude_controller::AttitudeController;
+
 pub mod control;
 pub use control::Control;
 use control::{MotorControl, QuadMotorControl};

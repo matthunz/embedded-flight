@@ -18,6 +18,7 @@
 //#![no_std]
 
 pub mod copter;
+use std::f32::consts::PI;
 
 pub use copter::{Copter, QuadCopter};
 
@@ -74,4 +75,22 @@ fn safe_sqrt(v: f32) -> f32 {
         return 0.0;
     }
     ret
+}
+
+fn wrap_PI(radian: f32) -> f32 {
+    let res = wrap_2PI(radian);
+    if res > PI {
+        res - PI * 2.
+    } else {
+        res
+    }
+}
+
+fn wrap_2PI(radian: f32) -> f32 {
+    let res = radian % (PI * 2.);
+    if res < 0. {
+        res + PI * 2.
+    } else {
+        res
+    }
 }

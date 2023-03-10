@@ -20,7 +20,7 @@ impl ESC<i16> for ExampleESC {
 fn main() {
     let mut motor_matrix =
         MultiCopterMotors::new(MotorMatrix::new([Motor::new(ExampleESC)]), Context::new(1));
-
+    motor_matrix.cx.is_armed = true;
     motor_matrix.cx.spool_desired = SpoolState::ThrottleUnlimited;
 
     motor_matrix.output(1);
