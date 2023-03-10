@@ -21,7 +21,7 @@ pub struct Limit {
     pub throttle_upper: bool,
 }
 
-pub struct MultiCopterMotors {
+pub struct Context {
     /// Time difference (in seconds) since the last loop time
     dt: f32,
 
@@ -102,13 +102,13 @@ pub struct MultiCopterMotors {
     pub yaw_headroom: f32,
 }
 
-impl Default for MultiCopterMotors {
+impl Default for Context {
     fn default() -> Self {
         Self::new(490)
     }
 }
 
-impl MultiCopterMotors {
+impl Context {
     pub fn new(speed_hz: u16) -> Self {
         Self {
             dt: 0.,
@@ -248,16 +248,6 @@ impl MultiCopterMotors {
         }
 
         1. / self.max_lift
-    }
-
-    pub fn output_armed_stabilizing(&self) {
-        // apply voltage and air pressure compensation
-        let compensation_gain = self.compensation_gain(); // compensation for battery voltage and altitude
-        let _roll_thrust = (self.roll_in + self.roll_in_ff) * compensation_gain;
-        let _pitch_thrust = (self.pitch_in + self.pitch_in_ff) * compensation_gain;
-        let _yaw_thrust = (self.yaw_in + self.yaw_in_ff) * compensation_gain;
-        let _throttle_thrust = self.throttle() * compensation_gain;
-        let _throttle_avg_max = self.throttle_avg_max * compensation_gain;
     }
 
     pub fn throttle(&self) -> f32 {

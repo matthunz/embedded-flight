@@ -1,8 +1,8 @@
-use super::MultiCopterMotors;
+use super::Context;
 use crate::constrain_float;
 
-pub struct TailSitter {
-    pub controller: MultiCopterMotors,
+pub struct TailSitterMotors {
+    pub controller: Context,
     pub thrust_left: f32,
     pub thrust_right: f32,
     pub tilt_left: f32,
@@ -12,7 +12,7 @@ pub struct TailSitter {
     pub has_diff_thrust: bool,
 }
 
-impl TailSitter {
+impl TailSitterMotors {
     pub fn f(&mut self) {
         let mut roll_thrust; // roll thrust input value, +/- 1.0
         let pitch_thrust; // pitch thrust input value, +/- 1.0

@@ -1,5 +1,5 @@
 use embedded_flight::{
-    motor_matrix::{Motor, MotorMatrix, SpoolState},
+    motor::{motor_matrix::Motor, Context, MotorMatrix, MultiCopterMotors, SpoolState},
     Actuator, ESC,
 };
 
@@ -18,9 +18,10 @@ impl ESC<i16> for ExampleESC {
 }
 
 fn main() {
-    let mut motor_matrix = MotorMatrix::new([Motor::new(ExampleESC)]);
-    motor_matrix.controller.is_armed = true;
-    motor_matrix.controller.spool_desired = SpoolState::ThrottleUnlimited;
+    let mut motor_matrix =
+        MultiCopterMotors::new(MotorMatrix::new([Motor::new(ExampleESC)]), Context::new(1));
+
+    motor_matrix.cx.spool_desired = SpoolState::ThrottleUnlimited;
 
     motor_matrix.output(1);
 }

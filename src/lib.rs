@@ -33,7 +33,7 @@ pub use plane::Plane;
 pub mod scheduler;
 pub use scheduler::Scheduler;
 
-pub mod motor_matrix;
+pub mod motor;
 
 /*
 pub async fn motor_task<const N: usize>(motors: &Mutex<MotorMatrix<impl ESC<i16>, N>>) {

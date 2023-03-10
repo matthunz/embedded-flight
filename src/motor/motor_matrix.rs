@@ -1,10 +1,5 @@
+use super::{Context, Motors, SpoolState};
 use crate::ESC;
-
-mod multi_copter;
-pub use self::multi_copter::{MultiCopterMotors, SpoolState};
-
-mod tail_sitter;
-pub use self::tail_sitter::TailSitter;
 
 pub struct Motor<E> {
     esc: E,
@@ -26,7 +21,6 @@ impl<E> Motor<E> {
 
 pub struct MotorMatrix<E, const N: usize> {
     pub motors: [Motor<E>; N],
-    pub controller: MultiCopterMotors,
 }
 
 impl<E, const N: usize> MotorMatrix<E, N>
@@ -34,20 +28,23 @@ where
     E: ESC<i16>,
 {
     pub fn new(motors: [Motor<E>; N]) -> Self {
-        Self {
-            motors,
-            controller: MultiCopterMotors::default(),
-        }
+        Self { motors }
+    }
+}
+
+impl<E: ESC<i16>, const N: usize> Motors for MotorMatrix<E, N> {
+    fn output_armed_stabilizing(&mut self, cx: &mut Context) {
+        // apply voltage and air pressure compensation
+        let compensation_gain = cx.compensation_gain(); // compensation for battery voltage and altitude
+        let _roll_thrust = (cx.roll_in + cx.roll_in_ff) * compensation_gain;
+        let _pitch_thrust = (cx.pitch_in + cx.pitch_in_ff) * compensation_gain;
+        let _yaw_thrust = (cx.yaw_in + cx.yaw_in_ff) * compensation_gain;
+        let _throttle_thrust = cx.throttle() * compensation_gain;
+        let _throttle_avg_max = cx.throttle_avg_max * compensation_gain;
     }
 
-    pub fn output(&mut self, dt: u32) {
-        self.controller.update_throttle_filter(dt);
-
-        self.output_to_motors();
-    }
-
-    pub fn output_to_motors(&mut self) {
-        match self.controller.spool_state {
+    fn output_to_motors(&mut self, cx: &mut Context) {
+        match cx.spool_state {
             SpoolState::ShutDown => {
                 for motor in &mut self.motors {
                     if motor.is_enabled {
@@ -59,9 +56,9 @@ where
                 // sends output to motors when armed but not flying
                 for motor in &mut self.motors {
                     if motor.is_enabled {
-                        motor.actuator = self.controller.actuator_with_slew(
+                        motor.actuator = cx.actuator_with_slew(
                             motor.actuator,
-                            self.controller.actuator_spin_up_to_ground_idle(),
+                            cx.actuator_spin_up_to_ground_idle(),
                         );
                     }
                 }
@@ -70,9 +67,9 @@ where
                 // Set motor output based on thrust requests
                 for motor in &mut self.motors {
                     if motor.is_enabled {
-                        motor.actuator = self.controller.actuator_with_slew(
+                        motor.actuator = cx.actuator_with_slew(
                             motor.actuator,
-                            self.controller.thrust_to_actuator(motor.thrust_rpyt_out),
+                            cx.thrust_to_actuator(motor.thrust_rpyt_out),
                         );
                     }
                 }
@@ -81,7 +78,7 @@ where
 
         for motor in &mut self.motors {
             if motor.is_enabled {
-                let pwm = self.controller.output_to_pwm(motor.actuator);
+                let pwm = cx.output_to_pwm(motor.actuator);
                 motor.esc.output(pwm);
             }
         }
