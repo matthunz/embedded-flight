@@ -11,6 +11,7 @@ embedded-hal = "0.2.7"
 embedded-time = "0.12.1"
 nalgebra = "0.31.0"
 pid-controller = "0.1.0"
+tokio = { version = "1.26.0", features = ["full"] }
 
 [dependencies.num-traits]
 version= "0.2.15"

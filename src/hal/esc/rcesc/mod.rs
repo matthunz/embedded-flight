@@ -20,7 +20,7 @@ pub struct RCESC<T: PwmPin> {
 impl<T> RCESC<T>
 where
     T: PwmPin,
-    T::Duty: Num + Copy,
+    T::Duty: Num + Clone,
 {
     pub fn new(arm: T::Duty, min: T::Duty, max: T::Duty, pin: T) -> Self {
         Self { arm, min, max, pin }
@@ -37,17 +37,17 @@ where
     where
         D: DelayMs<u16>,
     {
-        self.pin.set_duty(self.max);
+        self.pin.set_duty(self.max.clone());
         delay.delay_ms(2000);
 
-        self.pin.set_duty(self.min);
+        self.pin.set_duty(self.min.clone());
         delay.delay_ms(2000);
 
         self.arm_inner();
     }
 
     fn arm_inner(&mut self) {
-        self.pin.set_duty(self.arm)
+        self.pin.set_duty(self.arm.clone())
     }
 }
 
