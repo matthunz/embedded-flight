@@ -14,28 +14,28 @@ pub enum SpoolState {
 }
 
 pub struct Limit {
-    roll: bool,
-    pitch: bool,
-    yaw: bool,
-    throttle_lower: bool,
-    throttle_upper: bool,
+    pub roll: bool,
+    pub pitch: bool,
+    pub yaw: bool,
+    pub throttle_lower: bool,
+    pub throttle_upper: bool,
 }
 
 pub struct MultiCopterMotors {
     /// Time difference (in seconds) since the last loop time
     dt: f32,
 
-    speed_hz: u16,    // speed in hz to send updates to motors
-    roll_in: f32,     // desired roll control from attitude controllers, -1 ~ +1
-    roll_in_ff: f32,  // desired roll feed forward control from attitude controllers, -1 ~ +1
-    pitch_in: f32,    // desired pitch control from attitude controller, -1 ~ +1
-    pitch_in_ff: f32, // desired pitch feed forward control from attitude controller, -1 ~ +1
-    yaw_in: f32,      // desired yaw control from attitude controller, -1 ~ +1
-    yaw_in_ff: f32,   // desired yaw feed forward control from attitude controller, -1 ~ +1
+    speed_hz: u16,        // speed in hz to send updates to motors
+    pub roll_in: f32,     // desired roll control from attitude controllers, -1 ~ +1
+    pub roll_in_ff: f32,  // desired roll feed forward control from attitude controllers, -1 ~ +1
+    pub pitch_in: f32,    // desired pitch control from attitude controller, -1 ~ +1
+    pub pitch_in_ff: f32, // desired pitch feed forward control from attitude controller, -1 ~ +1
+    pub yaw_in: f32,      // desired yaw control from attitude controller, -1 ~ +1
+    pub yaw_in_ff: f32,   // desired yaw feed forward control from attitude controller, -1 ~ +1
 
-    forward_in: f32,       // last forward input from set_forward caller
-    lateral_in: f32,       // last lateral input from set_lateral caller
-    throttle_avg_max: f32, // last throttle input from set_throttle_avg_max
+    pub forward_in: f32,       // last forward input from set_forward caller
+    pub lateral_in: f32,       // last lateral input from set_lateral caller
+    pub throttle_avg_max: f32, // last throttle input from set_throttle_avg_max
 
     /// Pilot throttle input filter
     throttle_filter: LowPassFilter,
@@ -44,7 +44,7 @@ pub struct MultiCopterMotors {
     throttle_in: f32,
 
     /// Throttle after mixing is complete
-    throttle_out: f32,
+    pub throttle_out: f32,
 
     /// Throttle output slew detector
     throttle_slew: DerivativeFilter<7>,
@@ -77,7 +77,7 @@ pub struct MultiCopterMotors {
     max_lift: f32,
 
     /// throttle percentage (0 ~ 1) between zero and throttle_min
-    spin_up_ratio: f32,
+    pub spin_up_ratio: f32,
 
     /// Armed state of the motors
     pub is_armed: bool,
@@ -95,6 +95,11 @@ pub struct MultiCopterMotors {
     pub spool_up_time: f32,
 
     pub limit: Limit,
+
+    pub throttle_thrust_max: f32,
+
+    /// yaw control is given at least this pwm range
+    pub yaw_headroom: f32,
 }
 
 impl Default for MultiCopterMotors {
@@ -137,6 +142,8 @@ impl MultiCopterMotors {
             spool_state: SpoolState::GroundIdle,
             spool_desired: SpoolState::GroundIdle,
             spool_up_time: 0.5,
+            throttle_thrust_max: 1.,
+            yaw_headroom: 0.,
             limit: Limit {
                 roll: false,
                 pitch: false,

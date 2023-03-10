@@ -1,7 +1,10 @@
-mod multi_copter;
 use crate::ESC;
 
+mod multi_copter;
 pub use self::multi_copter::{MultiCopterMotors, SpoolState};
+
+mod tail_sitter;
+pub use self::tail_sitter::TailSitter;
 
 pub struct Motor<E> {
     esc: E,
